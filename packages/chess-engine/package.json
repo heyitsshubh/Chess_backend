@@ -1,0 +1,22 @@
+{
+  "name": "@chess/engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "High-performance Bitboard-based Chess Engine in pure TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@chess/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "@chess/config": "workspace:*",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
