@@ -1,0 +1,43 @@
+// ============================================================
+// Prisma Schema for Auth Service
+// 
+// Why separate schema per service?
+// In a microservices architecture, each service owns its own 
+// database schema. This enforces loose coupling — the auth 
+// service is never coupled to the game service's data model.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// User
+// The core identity entity. passwordHash is nullable to 
+// support OAuth-only accounts in the future. googleId is also
+// nullable for the same reason.
+// ============================================================
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String?
+  role         Role     @default(USER)
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@index([username])
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
