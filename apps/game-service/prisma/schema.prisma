@@ -1,0 +1,50 @@
+// ============================================================
+// Prisma Schema for Game Service
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id            String      @id @default(cuid())
+  whitePlayerId String
+  blackPlayerId String
+  status        GameStatus  @default(IN_PROGRESS)
+  result        GameResult?
+  reason        EndReason?
+  pgn           String?     @db.Text
+  timeControl   String
+  createdAt     DateTime    @default(now())
+  endedAt       DateTime?
+
+  @@index([whitePlayerId])
+  @@index([blackPlayerId])
+  @@index([status])
+}
+
+enum GameStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum GameResult {
+  WHITE_WINS
+  BLACK_WINS
+  DRAW
+}
+
+enum EndReason {
+  CHECKMATE
+  STALEMATE
+  RESIGNATION
+  TIMEOUT
+  ABANDONED
+  AGREEMENT
+}

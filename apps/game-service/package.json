@@ -1,0 +1,41 @@
+{
+  "name": "@chess/game-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time Game and Matchmaking Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@chess/engine": "workspace:*",
+    "@chess/errors": "workspace:*",
+    "@chess/logger": "workspace:*",
+    "@prisma/client": "^5.15.0",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.7.5",
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@chess/config": "workspace:*",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.2",
+    "@types/uuid": "^10.0.0",
+    "prisma": "^5.15.0",
+    "socket.io-client": "^4.7.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
