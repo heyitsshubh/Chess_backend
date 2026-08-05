@@ -61,6 +61,22 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  # API Gateway / Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: chess_nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    # For linux: Use host networking or extra_hosts to allow NGINX to reach localhost on host machine
+    # For mac/windows: host.docker.internal works out of the box
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - postgres
+      - redis
+
 volumes:
   postgres_data:
   redis_data:
