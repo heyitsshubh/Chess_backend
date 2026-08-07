@@ -11,6 +11,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { MatchmakingRequest, TimeControl, PlayerSession } from '../core/types';
 import { logger } from '@chess/logger';
 
+import { authClient } from '../infrastructure/grpc/AuthClient';
+
 export class MatchmakingService {
   constructor(private readonly redis: Redis) {}
 
@@ -19,12 +21,18 @@ export class MatchmakingService {
    * If a match is found, returns the opponent and a generated gameId.
    * If no match, adds user to queue and returns null.
    */
-  async joinQueue(req: MatchmakingRequest): Promise<{ gameId: string; opponent: PlayerSession } | null> {
+  async joinQueue(req: MatchmakingRequest): Promise<{ gameId: string; opponent: PlayerSession, selfElo: number } | null> {
     const queueKey = `matchmaking:${req.timeControl}`;
+    
+    // 1. Fetch user Elo via gRPC
+    const userInfo = await authClient.getUserInfo(req.userId);
+    const userElo = userInfo ? userInfo.elo : 1200;
+
     const userPayload = JSON.stringify({
       userId: req.userId,
       username: req.username,
       socketId: req.socketId,
+      elo: userElo,
     });
 
     // We use a Redis MULTI transaction to ensure atomic pop
@@ -51,6 +59,7 @@ export class MatchmakingService {
       return {
         gameId,
         opponent: waitingPlayer,
+        selfElo: userElo,
       };
     } else {
       // No one waiting, add to queue
