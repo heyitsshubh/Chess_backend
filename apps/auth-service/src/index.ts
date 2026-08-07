@@ -19,6 +19,9 @@ import { RedisTokenStore } from './infrastructure/cache/RedisTokenStore';
 import { ResendEmailService } from './infrastructure/email/ResendEmailService';
 import { createAuthRouter } from './api/routes/auth.routes';
 import { globalErrorHandler } from './api/middleware/errorHandler';
+import * as grpc from '@grpc/grpc-js';
+import { userProto } from '@chess/grpc';
+import { UserService } from './grpc/UserService';
 
 async function bootstrap() {
   // 1. Connect to PostgreSQL via Prisma
@@ -60,15 +63,32 @@ async function bootstrap() {
   // Global error handler — must be last
   app.use(globalErrorHandler);
 
-  // 5. Start server
+  // 5. Start Express server
   const server = app.listen(env.PORT, () => {
     logger.info({ port: env.PORT, service: env.SERVICE_NAME }, 'Auth service started');
+  });
+
+  // 6. Start gRPC Server
+  const grpcServer = new grpc.Server();
+  const userService = new UserService(prisma);
+  grpcServer.addService(userProto.UserService.service, {
+    GetUserInfo: userService.GetUserInfo
+  });
+
+  const GRPC_PORT = 50051;
+  grpcServer.bindAsync(`0.0.0.0:${GRPC_PORT}`, grpc.ServerCredentials.createInsecure(), (err, port) => {
+    if (err) {
+      logger.error({ err }, 'Failed to bind gRPC server');
+      return;
+    }
+    logger.info({ port, service: env.SERVICE_NAME }, 'gRPC service started');
   });
 
   // 6. Graceful shutdown
   const shutdown = async () => {
     logger.info('Shutting down gracefully...');
     server.close(async () => {
+      grpcServer.forceShutdown();
       await prisma.$disconnect();
       redis.disconnect();
       logger.info('Shutdown complete');

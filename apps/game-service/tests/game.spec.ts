@@ -14,6 +14,12 @@ vi.mock('ioredis', () => {
   };
 });
 
+vi.mock('../src/infrastructure/grpc/AuthClient', () => ({
+  authClient: {
+    getUserInfo: vi.fn().mockResolvedValue({ elo: 1500 })
+  }
+}));
+
 describe('MatchmakingService', () => {
   let redisMock: any;
   let service: MatchmakingService;

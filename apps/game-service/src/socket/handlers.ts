@@ -33,12 +33,12 @@ export function registerSocketHandlers(
     });
 
     if (match) {
-      const { gameId, opponent } = match;
+      const { gameId, opponent, selfElo } = match;
       
       // Create the game state
       const game = await gameRoomService.createGame(
         gameId,
-        { userId: user.sub, username: user.username, socketId: socket.id },
+        { userId: user.sub, username: user.username, socketId: socket.id, elo: selfElo },
         opponent,
         timeControl
       );

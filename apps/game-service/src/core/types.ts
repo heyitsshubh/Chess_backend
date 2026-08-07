@@ -8,6 +8,7 @@ export interface PlayerSession {
   userId: string;
   username: string;
   socketId: string;
+  elo: number;
 }
 
 export interface MatchmakingRequest {
