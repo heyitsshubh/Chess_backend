@@ -5,7 +5,7 @@
 // Maps Prisma models to domain entities so the domain layer
 // never imports from @prisma/client directly.
 // ============================================================
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../generated/prisma';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { User, UserRole } from '../../domain/entities/User';
 
