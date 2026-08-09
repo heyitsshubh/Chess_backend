@@ -7,7 +7,7 @@
 import { Redis } from 'ioredis';
 import { ChessGame, START_FEN, MoveGenerator, Move } from '@chess/engine';
 import { ActiveGame, PlayerSession, TimeControl } from '../core/types';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma';
 import { logger } from '@chess/logger';
 
 export class GameRoomService {

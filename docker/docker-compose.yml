@@ -3,10 +3,9 @@ version: '3.8'
 services:
   # PostgreSQL for Relational Data
   postgres:
-    image: postgres:15-alpine
+    image: postgres:14-alpine
     container_name: chess_postgres
     environment:
-      POSTGRES_USER: chess_admin
       POSTGRES_PASSWORD: chess_password
       POSTGRES_DB: chess_db
     ports:

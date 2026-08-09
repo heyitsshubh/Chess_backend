@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma';
 import { logger } from '@chess/logger';
 
 export class UserService {

@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { Redis } from 'ioredis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './generated/prisma';
 import { env } from './config/env';
 import { logger } from '@chess/logger';
 import { PrismaUserRepository } from './infrastructure/database/PrismaUserRepository';
@@ -43,6 +43,9 @@ async function bootstrap() {
   const app = express();
 
   // Security middleware
+  // Trust the first proxy (NGINX). Required for express-rate-limit to work correctly
+  // when the app is behind a reverse proxy that sets X-Forwarded-For.
+  app.set('trust proxy', 1);
   app.use(helmet());
   app.use(cors({
     origin: env.APP_URL,

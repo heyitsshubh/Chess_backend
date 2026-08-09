@@ -6,7 +6,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { Redis } from 'ioredis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './generated/prisma';
 import { env } from './config/env';
 import { logger } from '@chess/logger';
 import { MatchmakingService } from './services/MatchmakingService';
