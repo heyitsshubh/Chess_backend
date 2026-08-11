@@ -1,0 +1,9 @@
+{
+  "root": true,
+  "extends": "./packages/shared-config/.eslintrc.base.json",
+  "ignorePatterns": [
+    "**/generated/**",
+    "**/dist/**",
+    "**/node_modules/**"
+  ]
+}

@@ -3,18 +3,18 @@
 //
 // Wires up Socket.IO events to the Matchmaking and GameRoom services.
 // ============================================================
-import { Server, Socket } from 'socket.io';
-import { AuthenticatedSocket } from './middleware';
-import { MatchmakingService } from '../services/MatchmakingService';
-import { GameRoomService } from '../services/GameRoomService';
-import { TimeControl } from '../core/types';
-import { logger } from '@chess/logger';
+import { Server, Socket } from "socket.io";
+import { AuthenticatedSocket } from "./middleware";
+import { MatchmakingService } from "../services/MatchmakingService";
+import { GameRoomService } from "../services/GameRoomService";
+import { TimeControl } from "../core/types";
+import { logger } from "@chess/logger";
 
 export function registerSocketHandlers(
   io: Server,
   socket: Socket,
   matchmakingService: MatchmakingService,
-  gameRoomService: GameRoomService
+  gameRoomService: GameRoomService,
 ) {
   const authSocket = socket as AuthenticatedSocket;
   const user = authSocket.user;
@@ -23,7 +23,7 @@ export function registerSocketHandlers(
   let activeGameId: string | null = null;
   let activeTimeControl: TimeControl | null = null;
 
-  socket.on('matchmaking:join', async (timeControl: TimeControl) => {
+  socket.on("matchmaking:join", async (timeControl: TimeControl) => {
     activeTimeControl = timeControl;
     const match = await matchmakingService.joinQueue({
       userId: user.sub,
@@ -34,13 +34,18 @@ export function registerSocketHandlers(
 
     if (match) {
       const { gameId, opponent, selfElo } = match;
-      
+
       // Create the game state
       const game = await gameRoomService.createGame(
         gameId,
-        { userId: user.sub, username: user.username, socketId: socket.id, elo: selfElo },
+        {
+          userId: user.sub,
+          username: user.username,
+          socketId: socket.id,
+          elo: selfElo,
+        },
         opponent,
-        timeControl
+        timeControl,
       );
 
       // Join the Socket.IO room for this game
@@ -51,7 +56,7 @@ export function registerSocketHandlers(
       activeGameId = gameId;
 
       // Broadcast game start to both players
-      io.to(`game:${gameId}`).emit('matchmaking:matched', {
+      io.to(`game:${gameId}`).emit("matchmaking:matched", {
         gameId,
         white: game.white,
         black: game.black,
@@ -60,7 +65,7 @@ export function registerSocketHandlers(
     }
   });
 
-  socket.on('matchmaking:leave', async () => {
+  socket.on("matchmaking:leave", async () => {
     if (activeTimeControl) {
       await matchmakingService.leaveQueue({
         userId: user.sub,
@@ -72,44 +77,50 @@ export function registerSocketHandlers(
     }
   });
 
-  socket.on('game:move', async ({ gameId, move }: { gameId: string; move: number }) => {
-    const result = await gameRoomService.makeMove(gameId, user.sub, move);
+  socket.on(
+    "game:move",
+    async ({ gameId, move }: { gameId: string; move: number }) => {
+      const result = await gameRoomService.makeMove(gameId, user.sub, move);
 
-    if (result.valid && result.game) {
-      // Broadcast the move to everyone in the room (including spectators)
-      io.to(`game:${gameId}`).emit('game:move_made', {
-        move,
-        fen: result.game.fen,
-        whiteTime: result.game.whiteTime,
-        blackTime: result.game.blackTime,
-      });
-
-      // If game ended, broadcast result
-      if (result.status && result.status !== 'IN_PROGRESS') {
-        io.to(`game:${gameId}`).emit('game:end', {
-          reason: result.status,
-          winner: result.winner,
+      if (result.valid && result.game) {
+        // Broadcast the move to everyone in the room (including spectators)
+        io.to(`game:${gameId}`).emit("game:move_made", {
+          move,
+          fen: result.game.fen,
+          whiteTime: result.game.whiteTime,
+          blackTime: result.game.blackTime,
         });
-      }
-    } else {
-      socket.emit('game:error', 'Invalid move');
-    }
-  });
 
-  socket.on('game:resign', async (gameId: string) => {
+        // If game ended, broadcast result
+        if (result.status && result.status !== "IN_PROGRESS") {
+          io.to(`game:${gameId}`).emit("game:end", {
+            reason: result.status,
+            winner: result.winner,
+          });
+        }
+      } else {
+        socket.emit("game:error", "Invalid move");
+      }
+    },
+  );
+
+  socket.on("game:resign", async (gameId: string) => {
     const game = await gameRoomService.resign(gameId, user.sub);
     if (game) {
-      const winner = game.white.userId === user.sub ? 'BLACK' : 'WHITE';
-      io.to(`game:${gameId}`).emit('game:end', {
-        reason: 'RESIGNATION',
+      const winner = game.white.userId === user.sub ? "BLACK" : "WHITE";
+      io.to(`game:${gameId}`).emit("game:end", {
+        reason: "RESIGNATION",
         winner,
       });
     }
   });
 
-  socket.on('disconnect', async () => {
-    logger.info({ userId: user.sub, socketId: socket.id }, 'Socket disconnected');
-    
+  socket.on("disconnect", async () => {
+    logger.info(
+      { userId: user.sub, socketId: socket.id },
+      "Socket disconnected",
+    );
+
     // Remove from matchmaking if they were in it
     if (activeTimeControl) {
       await matchmakingService.leaveQueue({
@@ -125,9 +136,9 @@ export function registerSocketHandlers(
     if (activeGameId) {
       const game = await gameRoomService.resign(activeGameId, user.sub);
       if (game) {
-        const winner = game.white.userId === user.sub ? 'BLACK' : 'WHITE';
-        io.to(`game:${activeGameId}`).emit('game:end', {
-          reason: 'ABANDONED',
+        const winner = game.white.userId === user.sub ? "BLACK" : "WHITE";
+        io.to(`game:${activeGameId}`).emit("game:end", {
+          reason: "ABANDONED",
           winner,
         });
       }

@@ -5,9 +5,9 @@
 // Persists access token via expo-secure-store.
 // Follows SOLID - SRP: only handles auth-related state.
 // ============================================================
-import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
-import { authApi, UserProfile } from '@/api/authApi';
+import { create } from "zustand";
+import * as SecureStore from "expo-secure-store";
+import { authApi, UserProfile } from "@/api/authApi";
 
 interface AuthState {
   token: string | null;
@@ -19,7 +19,11 @@ interface AuthState {
 
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  register: (
+    email: string,
+    username: string,
+    password: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
   fetchProfile: () => Promise<void>;
   hydrate: () => Promise<void>;
@@ -37,7 +41,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // --- Actions ---
   hydrate: async () => {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await SecureStore.getItemAsync("accessToken");
       if (token) {
         set({ token });
         await get().fetchProfile();
@@ -53,12 +57,13 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await authApi.login({ email, password });
-      await SecureStore.setItemAsync('accessToken', data.accessToken);
+      await SecureStore.setItemAsync("accessToken", data.accessToken);
       set({ token: data.accessToken });
       await get().fetchProfile();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
       const message =
-        err.response?.data?.error?.message ?? 'Login failed. Please try again.';
+        error.response?.data?.error?.message ?? "Login failed. Please try again.";
       set({ error: message });
       throw err;
     } finally {
@@ -70,9 +75,11 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await authApi.register({ email, username, password });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
       const message =
-        err.response?.data?.error?.message ?? 'Registration failed. Please try again.';
+        error.response?.data?.error?.message ??
+        "Registration failed. Please try again.";
       set({ error: message });
       throw err;
     } finally {
@@ -87,7 +94,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     } catch {
       // Even if server logout fails, clear local state
     } finally {
-      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync("accessToken");
       set({ token: null, user: null, isLoading: false });
     }
   },

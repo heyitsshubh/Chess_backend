@@ -5,7 +5,7 @@
   "description": "Shared configurations for ESLint, Prettier, and TypeScript",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "echo 'No source files to lint in config package'"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^7.13.0",

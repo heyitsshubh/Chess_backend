@@ -7,11 +7,11 @@
 // a refresh token is stolen — the attacker has at most one use
 // before it's revoked. This is called "rotating refresh tokens".
 // ============================================================
-import { IUserRepository } from '../../domain/repositories/IUserRepository';
-import { ITokenStore } from '../../infrastructure/cache/ITokenStore';
-import { TokenService, TokenPair } from './TokenService';
-import { UnauthorizedError } from '@chess/errors';
-import { logger } from '@chess/logger';
+import { IUserRepository } from "../../domain/repositories/IUserRepository";
+import { ITokenStore } from "../../infrastructure/cache/ITokenStore";
+import { TokenService, TokenPair } from "./TokenService";
+import { UnauthorizedError } from "@chess/errors";
+import { logger } from "@chess/logger";
 
 export class RefreshToken {
   constructor(
@@ -25,7 +25,7 @@ export class RefreshToken {
     try {
       payload = TokenService.verifyRefreshToken(rawRefreshToken);
     } catch {
-      throw new UnauthorizedError('Invalid or expired refresh token');
+      throw new UnauthorizedError("Invalid or expired refresh token");
     }
 
     // 2. Check token exists in Redis (wasn't already used or revoked)
@@ -35,9 +35,14 @@ export class RefreshToken {
     );
     if (!isValid) {
       // Possible token reuse attack — revoke ALL tokens for this user
-      logger.warn({ userId: payload.sub }, 'Possible refresh token reuse detected — revoking all tokens');
+      logger.warn(
+        { userId: payload.sub },
+        "Possible refresh token reuse detected — revoking all tokens",
+      );
       await this.tokenStore.revokeAllRefreshTokens(payload.sub);
-      throw new UnauthorizedError('Refresh token reuse detected. Please login again.');
+      throw new UnauthorizedError(
+        "Refresh token reuse detected. Please login again.",
+      );
     }
 
     // 3. Revoke the old token immediately (rotation)
@@ -46,7 +51,7 @@ export class RefreshToken {
     // 4. Fetch fresh user data (in case role changed since last login)
     const user = await this.userRepo.findById(payload.sub);
     if (!user) {
-      throw new UnauthorizedError('User no longer exists');
+      throw new UnauthorizedError("User no longer exists");
     }
 
     // 5. Issue new token pair
@@ -57,9 +62,13 @@ export class RefreshToken {
       role: user.role,
     });
 
-    await this.tokenStore.storeRefreshToken(user.id, newTokens.refreshTokenId, newTokens.refreshToken);
+    await this.tokenStore.storeRefreshToken(
+      user.id,
+      newTokens.refreshTokenId,
+      newTokens.refreshToken,
+    );
 
-    logger.info({ userId: user.id }, 'Refresh token rotated');
+    logger.info({ userId: user.id }, "Refresh token rotated");
 
     return newTokens;
   }

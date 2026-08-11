@@ -6,10 +6,10 @@
 // errors thrown or passed to next() and returns consistent
 // JSON error responses. Never expose stack traces in production.
 // ============================================================
-import { Request, Response, NextFunction } from 'express';
-import { AppError } from '@chess/errors';
-import { logger } from '@chess/logger';
-import { ZodError } from 'zod';
+import { Request, Response, NextFunction } from "express";
+import { AppError } from "@chess/errors";
+import { logger } from "@chess/logger";
+import { ZodError } from "zod";
 
 export function globalErrorHandler(
   err: Error,
@@ -22,8 +22,8 @@ export function globalErrorHandler(
     res.status(400).json({
       success: false,
       error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Validation failed',
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
         details: err.flatten().fieldErrors,
       },
     });
@@ -33,7 +33,7 @@ export function globalErrorHandler(
   // Handle known operational errors
   if (err instanceof AppError) {
     if (!err.isOperational) {
-      logger.error({ err, path: req.path }, 'Non-operational AppError');
+      logger.error({ err, path: req.path }, "Non-operational AppError");
     }
     res.status(err.statusCode).json({
       success: false,
@@ -46,13 +46,13 @@ export function globalErrorHandler(
   }
 
   // Unknown/unexpected errors — log in full, hide from client
-  logger.error({ err, path: req.path, method: req.method }, 'Unexpected error');
+  logger.error({ err, path: req.path, method: req.method }, "Unexpected error");
 
   res.status(500).json({
     success: false,
     error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'An unexpected error occurred',
+      code: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred",
     },
   });
 }

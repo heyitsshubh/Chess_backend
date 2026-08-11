@@ -5,10 +5,10 @@
 // HTML templates are inline — for a production system,
 // move them to a template engine (Handlebars, MJML, etc.)
 // ============================================================
-import { Resend } from 'resend';
-import { IEmailService } from './IEmailService';
-import { env } from '../../config/env';
-import { logger } from '@chess/logger';
+import { Resend } from "resend";
+import { IEmailService } from "./IEmailService";
+import { env } from "../../config/env";
+import { logger } from "@chess/logger";
 
 export class ResendEmailService implements IEmailService {
   private readonly resend: Resend;
@@ -17,11 +17,15 @@ export class ResendEmailService implements IEmailService {
     this.resend = new Resend(env.RESEND_API_KEY);
   }
 
-  async sendEmailVerification(to: string, username: string, otp: string): Promise<void> {
+  async sendEmailVerification(
+    to: string,
+    username: string,
+    otp: string,
+  ): Promise<void> {
     const { error } = await this.resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
       to,
-      subject: 'Verify your Chess Platform account',
+      subject: "Verify your Chess Platform account",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #1a1a2e;">Welcome to Chess Platform, ${username}!</h1>
@@ -36,18 +40,23 @@ export class ResendEmailService implements IEmailService {
     });
 
     if (error) {
-      logger.error({ error, to }, 'Resend email verification failed');
+      logger.error({ error, to }, "Resend email verification failed");
       throw new Error(`Email send failed: ${error.message}`);
     }
   }
 
-  async sendPasswordReset(to: string, username: string, userId: string, token: string): Promise<void> {
+  async sendPasswordReset(
+    to: string,
+    username: string,
+    userId: string,
+    token: string,
+  ): Promise<void> {
     const resetUrl = `${env.APP_URL}/auth/reset-password?userId=${userId}&token=${token}`;
 
     const { error } = await this.resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
       to,
-      subject: 'Reset your Chess Platform password',
+      subject: "Reset your Chess Platform password",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #1a1a2e;">Password Reset Request</h1>
@@ -68,7 +77,7 @@ export class ResendEmailService implements IEmailService {
     });
 
     if (error) {
-      logger.error({ error, to }, 'Resend password reset email failed');
+      logger.error({ error, to }, "Resend password reset email failed");
       throw new Error(`Email send failed: ${error.message}`);
     }
   }

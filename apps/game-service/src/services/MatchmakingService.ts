@@ -1,17 +1,17 @@
 // ============================================================
 // Matchmaking Service
 //
-// Uses Redis Sets to queue players seeking a match. 
+// Uses Redis Sets to queue players seeking a match.
 // For simplicity, we use one Set per time control. When a player
 // joins, we check if someone is already waiting. If yes, pop them
 // and create a match. If no, add the current player to the waitlist.
 // ============================================================
-import { Redis } from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
-import { MatchmakingRequest, TimeControl, PlayerSession } from '../core/types';
-import { logger } from '@chess/logger';
+import { Redis } from "ioredis";
+import { v4 as uuidv4 } from "uuid";
+import { MatchmakingRequest, TimeControl, PlayerSession } from "../core/types";
+import { logger } from "@chess/logger";
 
-import { authClient } from '../infrastructure/grpc/AuthClient';
+import { authClient } from "../infrastructure/grpc/AuthClient";
 
 export class MatchmakingService {
   constructor(private readonly redis: Redis) {}
@@ -21,9 +21,13 @@ export class MatchmakingService {
    * If a match is found, returns the opponent and a generated gameId.
    * If no match, adds user to queue and returns null.
    */
-  async joinQueue(req: MatchmakingRequest): Promise<{ gameId: string; opponent: PlayerSession, selfElo: number } | null> {
+  async joinQueue(req: MatchmakingRequest): Promise<{
+    gameId: string;
+    opponent: PlayerSession;
+    selfElo: number;
+  } | null> {
     const queueKey = `matchmaking:${req.timeControl}`;
-    
+
     // 1. Fetch user Elo via gRPC
     const userInfo = await authClient.getUserInfo(req.userId);
     const userElo = userInfo ? userInfo.elo : 1200;
@@ -52,8 +56,13 @@ export class MatchmakingService {
       // Match found!
       const gameId = uuidv4();
       logger.info(
-        { gameId, p1: waitingPlayer.userId, p2: req.userId, timeControl: req.timeControl },
-        'Match created'
+        {
+          gameId,
+          p1: waitingPlayer.userId,
+          p2: req.userId,
+          timeControl: req.timeControl,
+        },
+        "Match created",
       );
 
       return {
@@ -64,7 +73,10 @@ export class MatchmakingService {
     } else {
       // No one waiting, add to queue
       await this.redis.sadd(queueKey, userPayload);
-      logger.info({ userId: req.userId, timeControl: req.timeControl }, 'User joined matchmaking queue');
+      logger.info(
+        { userId: req.userId, timeControl: req.timeControl },
+        "User joined matchmaking queue",
+      );
       return null;
     }
   }
@@ -81,6 +93,9 @@ export class MatchmakingService {
     });
 
     await this.redis.srem(queueKey, userPayload);
-    logger.info({ userId: req.userId, timeControl: req.timeControl }, 'User left matchmaking queue');
+    logger.info(
+      { userId: req.userId, timeControl: req.timeControl },
+      "User left matchmaking queue",
+    );
   }
 }

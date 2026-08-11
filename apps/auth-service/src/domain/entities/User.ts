@@ -2,8 +2,8 @@
 // Domain Entity: User
 //
 // Why a domain entity separate from the Prisma model?
-// The Prisma model is an infrastructure concern — it maps to 
-// database columns. The domain entity is the pure business 
+// The Prisma model is an infrastructure concern — it maps to
+// database columns. The domain entity is the pure business
 // object. By keeping them separate:
 // 1. Business logic never leaks into infrastructure
 // 2. We can change ORM without touching domain logic
@@ -11,9 +11,9 @@
 // ============================================================
 
 export enum UserRole {
-  USER = 'USER',
-  MODERATOR = 'MODERATOR',
-  ADMIN = 'ADMIN',
+  USER = "USER",
+  MODERATOR = "MODERATOR",
+  ADMIN = "ADMIN",
 }
 
 export interface UserProps {
@@ -54,7 +54,7 @@ export class User {
   }
 
   // Returns a safe public representation (no password hash)
-  public toPublic(): Omit<UserProps, 'passwordHash'> {
+  public toPublic(): Omit<UserProps, "passwordHash"> {
     return {
       id: this.id,
       email: this.email,

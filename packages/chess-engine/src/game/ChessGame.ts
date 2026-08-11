@@ -1,10 +1,10 @@
-import { Board } from '../core/Board';
-import { Color, PieceType, CastlingRights } from '../constants/Enums';
-import { Square } from '../constants/Squares';
-import { Move, MoveFlags } from '../core/Move';
-import { MoveGenerator } from '../moves/MoveGenerator';
-import { History, GameStateRecord } from './History';
-import { FEN, START_FEN } from '../parsers/FEN';
+import { Board } from "../core/Board";
+import { Color, PieceType, CastlingRights } from "../constants/Enums";
+import { Square } from "../constants/Squares";
+import { Move, MoveFlags } from "../core/Move";
+import { MoveGenerator } from "../moves/MoveGenerator";
+import { History, GameStateRecord } from "./History";
+import { FEN, START_FEN } from "../parsers/FEN";
 
 export class ChessGame {
   public board: Board;
@@ -53,7 +53,7 @@ export class ChessGame {
     const flags = Move.getFlags(move);
     const side = this.board.sideToMove;
     const opp = side ^ 1;
-    
+
     const movingPiece = this.board.getPieceAt(from)!;
     let capturedPiece = -1;
 
@@ -75,7 +75,7 @@ export class ChessGame {
 
     // Move piece
     this.board.removePiece(from, side, movingPiece.piece);
-    
+
     // Promotions
     if (Move.isPromotion(move)) {
       this.board.addPiece(to, side, Move.getPromotedPiece(move));
@@ -115,14 +115,24 @@ export class ChessGame {
     const KINGS = [4, 60];
     const K_ROOKS = [7, 63];
     const Q_ROOKS = [0, 56];
-    
-    if (from === KINGS[Color.WHITE]) newRights &= ~(CastlingRights.WHITE_KINGSIDE | CastlingRights.WHITE_QUEENSIDE);
-    if (from === KINGS[Color.BLACK]) newRights &= ~(CastlingRights.BLACK_KINGSIDE | CastlingRights.BLACK_QUEENSIDE);
-    if (from === K_ROOKS[Color.WHITE] || to === K_ROOKS[Color.WHITE]) newRights &= ~CastlingRights.WHITE_KINGSIDE;
-    if (from === Q_ROOKS[Color.WHITE] || to === Q_ROOKS[Color.WHITE]) newRights &= ~CastlingRights.WHITE_QUEENSIDE;
-    if (from === K_ROOKS[Color.BLACK] || to === K_ROOKS[Color.BLACK]) newRights &= ~CastlingRights.BLACK_KINGSIDE;
-    if (from === Q_ROOKS[Color.BLACK] || to === Q_ROOKS[Color.BLACK]) newRights &= ~CastlingRights.BLACK_QUEENSIDE;
-    
+
+    if (from === KINGS[Color.WHITE])
+      newRights &= ~(
+        CastlingRights.WHITE_KINGSIDE | CastlingRights.WHITE_QUEENSIDE
+      );
+    if (from === KINGS[Color.BLACK])
+      newRights &= ~(
+        CastlingRights.BLACK_KINGSIDE | CastlingRights.BLACK_QUEENSIDE
+      );
+    if (from === K_ROOKS[Color.WHITE] || to === K_ROOKS[Color.WHITE])
+      newRights &= ~CastlingRights.WHITE_KINGSIDE;
+    if (from === Q_ROOKS[Color.WHITE] || to === Q_ROOKS[Color.WHITE])
+      newRights &= ~CastlingRights.WHITE_QUEENSIDE;
+    if (from === K_ROOKS[Color.BLACK] || to === K_ROOKS[Color.BLACK])
+      newRights &= ~CastlingRights.BLACK_KINGSIDE;
+    if (from === Q_ROOKS[Color.BLACK] || to === Q_ROOKS[Color.BLACK])
+      newRights &= ~CastlingRights.BLACK_QUEENSIDE;
+
     this.board.updateHashCastling(oldCastling, newRights);
 
     // Update Clocks
@@ -142,7 +152,18 @@ export class ChessGame {
     // Check legality: King cannot be left in check
     const kSq = getLSB(this.board.getPieceBitboard(side, PieceType.KING));
     if (MoveGenerator.isSquareAttacked(this.board, kSq, opp)) {
-      this.undoMoveInternal(move, from, to, flags, side, movingPiece.piece, capturedPiece, oldEp, oldCastling, oldHalfMove);
+      this.undoMoveInternal(
+        move,
+        from,
+        to,
+        flags,
+        side,
+        movingPiece.piece,
+        capturedPiece,
+        oldEp,
+        oldCastling,
+        oldHalfMove,
+      );
       return false;
     }
 
@@ -168,21 +189,35 @@ export class ChessGame {
     const to = Move.getTo(move);
     const flags = Move.getFlags(move);
     const side = this.board.sideToMove ^ 1;
-    
+
     let movingPieceType = this.board.getPieceAt(to)!.piece;
     if (Move.isPromotion(move)) movingPieceType = PieceType.PAWN;
 
     this.undoMoveInternal(
-      move, from, to, flags, side, movingPieceType, 
-      record.capturedPiece, prevRecord.enPassantSquare, 
-      prevRecord.castlingRights, prevRecord.halfMoveClock
+      move,
+      from,
+      to,
+      flags,
+      side,
+      movingPieceType,
+      record.capturedPiece,
+      prevRecord.enPassantSquare,
+      prevRecord.castlingRights,
+      prevRecord.halfMoveClock,
     );
   }
 
   private undoMoveInternal(
-    move: number, from: number, to: number, flags: MoveFlags, side: Color, 
-    movingPieceType: PieceType, capturedPiece: number,
-    oldEp: number, oldCastling: number, oldHalfMove: number
+    move: number,
+    from: number,
+    to: number,
+    flags: MoveFlags,
+    side: Color,
+    movingPieceType: PieceType,
+    capturedPiece: number,
+    oldEp: number,
+    oldCastling: number,
+    oldHalfMove: number,
   ) {
     const opp = side ^ 1;
 
@@ -238,11 +273,28 @@ function getLSB(bitboard: bigint): number {
   if (bitboard === 0n) return -1;
   let b = bitboard ^ (bitboard - 1n);
   let index = 0;
-  if ((b & 0xffffffff00000000n) !== 0n) { index += 32; b >>= 32n; }
-  if ((b & 0xffff0000n) !== 0n) { index += 16; b >>= 16n; }
-  if ((b & 0xff00n) !== 0n) { index += 8; b >>= 8n; }
-  if ((b & 0xf0n) !== 0n) { index += 4; b >>= 4n; }
-  if ((b & 0xcn) !== 0n) { index += 2; b >>= 2n; }
-  if ((b & 0x2n) !== 0n) { index += 1; }
+  if ((b & 0xffffffff00000000n) !== 0n) {
+    index += 32;
+    b >>= 32n;
+  }
+  if ((b & 0xffff0000n) !== 0n) {
+    index += 16;
+    b >>= 16n;
+  }
+  if ((b & 0xff00n) !== 0n) {
+    index += 8;
+    b >>= 8n;
+  }
+  if ((b & 0xf0n) !== 0n) {
+    index += 4;
+    b >>= 4n;
+  }
+  if ((b & 0xcn) !== 0n) {
+    index += 2;
+    b >>= 2n;
+  }
+  if ((b & 0x2n) !== 0n) {
+    index += 1;
+  }
   return index;
 }

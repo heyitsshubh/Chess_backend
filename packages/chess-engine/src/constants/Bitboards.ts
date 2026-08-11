@@ -53,12 +53,29 @@ export function getLSB(bitboard: bigint): number {
   // For performance, an isolated LSB operation:
   let b = bitboard ^ (bitboard - 1n);
   let index = 0;
-  if ((b & 0xffffffff00000000n) !== 0n) { index += 32; b >>= 32n; }
-  if ((b & 0xffff0000n) !== 0n) { index += 16; b >>= 16n; }
-  if ((b & 0xff00n) !== 0n) { index += 8; b >>= 8n; }
-  if ((b & 0xf0n) !== 0n) { index += 4; b >>= 4n; }
-  if ((b & 0xcn) !== 0n) { index += 2; b >>= 2n; }
-  if ((b & 0x2n) !== 0n) { index += 1; }
+  if ((b & 0xffffffff00000000n) !== 0n) {
+    index += 32;
+    b >>= 32n;
+  }
+  if ((b & 0xffff0000n) !== 0n) {
+    index += 16;
+    b >>= 16n;
+  }
+  if ((b & 0xff00n) !== 0n) {
+    index += 8;
+    b >>= 8n;
+  }
+  if ((b & 0xf0n) !== 0n) {
+    index += 4;
+    b >>= 4n;
+  }
+  if ((b & 0xcn) !== 0n) {
+    index += 2;
+    b >>= 2n;
+  }
+  if ((b & 0x2n) !== 0n) {
+    index += 1;
+  }
   return index;
 }
 
