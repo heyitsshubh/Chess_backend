@@ -1,0 +1,68 @@
+# =============================================================
+# Release — Semantic Versioning + Changelog Generation
+#
+# Triggers: push to main.
+#
+# Pipeline:
+#  1. Determine next version from Conventional Commits
+#  2. Generate CHANGELOG.md
+#  3. Bump package.json versions in all workspaces
+#  4. Create GitHub Release with release notes
+#  5. Push version commit + git tag
+# =============================================================
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Release Please
+        uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Tag Docker images as release
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          echo "Released version: ${{ steps.release.outputs.tag_name }}"
+          # Retag the latest Docker images with the release version
+          echo "::notice::Docker images can be tagged manually via GHCR UI with version ${{ steps.release.outputs.tag_name }}"

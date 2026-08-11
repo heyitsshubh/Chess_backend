@@ -17,7 +17,6 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach access token automatically to all requests
 apiClient.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('accessToken');
   if (token) {
@@ -26,7 +25,6 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// On 401, clear stored tokens and let the auth store handle redirect
 apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {

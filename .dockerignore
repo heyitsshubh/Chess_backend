@@ -1,0 +1,11 @@
+node_modules
+.turbo
+dist
+.env
+.env.*
+*.log
+.git
+.github
+README.md
+integration_test.ts
+apps/mobile-app

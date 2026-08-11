@@ -27,9 +27,45 @@ async function runIntegrationTest() {
     // Wait, the API sets HTTP-only cookies for tokens. Axios won't automatically use them unless we handle headers.
     // Let's grab the set-cookie header.
     const accessToken = loginRes.data?.data?.accessToken;
-    
     if (!accessToken) throw new Error('Access token not found in response body');
     console.log('Got Access Token (first 10 chars):', accessToken.substring(0, 10) + '...');
+
+    const cookies = loginRes.headers['set-cookie'] || [];
+    const refreshTokenCookie = cookies.find(c => c.startsWith('refreshToken='));
+
+    // 2.1 Test GET /auth/me
+    console.log('\n2.1 Testing GET /auth/me (Protected Route)...');
+    const meRes = await axios.get(`${API_URL}/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    console.log('GET /me Response:', meRes.status, meRes.data);
+
+    // 2.2 Test POST /auth/refresh
+    let newAccessToken = accessToken;
+    if (refreshTokenCookie) {
+      console.log('\n2.2 Testing POST /auth/refresh...');
+      const refreshRes = await axios.post(`${API_URL}/refresh`, {}, {
+        headers: { Cookie: refreshTokenCookie.split(';')[0] }
+      });
+      console.log('POST /refresh Response:', refreshRes.status);
+      newAccessToken = refreshRes.data?.data?.accessToken || accessToken;
+    }
+
+    // 2.3 Test POST /auth/logout
+    console.log('\n2.3 Testing POST /auth/logout...');
+    const logoutRes = await axios.post(`${API_URL}/logout`, {}, {
+      headers: { 
+        Authorization: `Bearer ${newAccessToken}`,
+        Cookie: refreshTokenCookie ? refreshTokenCookie.split(';')[0] : ''
+      }
+    });
+    console.log('POST /logout Response:', logoutRes.status, logoutRes.data);
+
+    // Re-login to get a valid token for socket test because we just logged out!
+    console.log('\n2.4 Logging back in for socket test...');
+    const reloginRes = await axios.post(`${API_URL}/login`, { email, password });
+    const finalAccessToken = reloginRes.data?.data?.accessToken;
+    if (!finalAccessToken) throw new Error('Access token not found in relogin response');
 
     // 3. Connect to WebSocket
     console.log('\n3. Connecting to WebSocket Game Service (via NGINX port 80)...');
@@ -37,7 +73,7 @@ async function runIntegrationTest() {
     const socket = io(SOCKET_URL, {
       path: '/socket.io/',
       transports: ['websocket'],
-      auth: { token: accessToken }
+      auth: { token: finalAccessToken }
     });
 
     socket.on('connect', () => {
