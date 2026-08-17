@@ -156,10 +156,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-${{ github.sha }}
+      - name: Build packages
+        run: pnpm turbo run build --cache-dir=.turbo
 
       - name: Run tests — ${{ matrix.package.name }}
         run: pnpm --filter "${{ matrix.package.filter }}" test -- --reporter=verbose
@@ -236,15 +234,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Create auth database
+      - name: Create auth and game databases
         run: |
-          PGPASSWORD=chess_password psql -h localhost -U chess_admin -d chess_db \
-            -c "CREATE DATABASE chess_auth_db;"
-
-      - name: Create game database
-        run: |
-          PGPASSWORD=chess_password psql -h localhost -U chess_admin -d chess_db \
-            -c "CREATE DATABASE chess_game_db;"
+          docker exec -i $(docker ps -q --filter ancestor=postgres:14-alpine) psql -U chess_admin -d chess_db -c "CREATE DATABASE chess_auth_db;"
+          docker exec -i $(docker ps -q --filter ancestor=postgres:14-alpine) psql -U chess_admin -d chess_db -c "CREATE DATABASE chess_game_db;"
 
       - name: Run Prisma migrations
         run: |
