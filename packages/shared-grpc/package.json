@@ -4,6 +4,12 @@
   "private": true,
   "main": "index.js",
   "types": "index.d.ts",
+  "scripts": {
+    "build": "echo 'No build step — @chess/grpc is pre-compiled'",
+    "lint": "echo 'No TS sources to lint in @chess/grpc'",
+    "typecheck": "echo 'No TS sources to typecheck in @chess/grpc'",
+    "test": "echo 'No tests in @chess/grpc'"
+  },
   "dependencies": {
     "@grpc/grpc-js": "^1.10.8",
     "@grpc/proto-loader": "^0.7.13"

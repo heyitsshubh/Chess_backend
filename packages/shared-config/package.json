@@ -5,7 +5,10 @@
   "description": "Shared configurations for ESLint, Prettier, and TypeScript",
   "main": "index.js",
   "scripts": {
-    "lint": "echo 'No source files to lint in config package'"
+    "build": "echo 'No build step — @chess/config is config-only'",
+    "lint": "echo 'No source files to lint in config package'",
+    "typecheck": "echo 'No TS sources to typecheck in @chess/config'",
+    "test": "echo 'No tests in @chess/config'"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^7.13.0",
