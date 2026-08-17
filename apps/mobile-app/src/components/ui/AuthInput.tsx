@@ -3,8 +3,14 @@
 //
 // Glassmorphic styled input for auth forms.
 // ============================================================
-import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, TextInputProps } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  TextInput,
+  Text,
+  TouchableOpacity,
+  TextInputProps,
+} from "react-native";
 
 interface Props extends TextInputProps {
   label: string;
@@ -12,18 +18,23 @@ interface Props extends TextInputProps {
   isPassword?: boolean;
 }
 
-export function AuthInput({ label, error, isPassword = false, ...props }: Props) {
+export function AuthInput({
+  label,
+  error,
+  isPassword = false,
+  ...props
+}: Props) {
   const [visible, setVisible] = useState(false);
 
   return (
     <View style={{ marginBottom: 16 }}>
       <Text
         style={{
-          color: '#9CA3AF',
+          color: "#9CA3AF",
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: "600",
           letterSpacing: 1,
-          textTransform: 'uppercase',
+          textTransform: "uppercase",
           marginBottom: 8,
         }}
       >
@@ -31,12 +42,12 @@ export function AuthInput({ label, error, isPassword = false, ...props }: Props)
       </Text>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#1C1C22',
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: "#1C1C22",
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: error ? '#EF4444' : '#2A2A35',
+          borderColor: error ? "#EF4444" : "#2A2A35",
         }}
       >
         <TextInput
@@ -46,7 +57,7 @@ export function AuthInput({ label, error, isPassword = false, ...props }: Props)
             flex: 1,
             paddingVertical: 14,
             paddingHorizontal: 16,
-            color: '#F8F8FF',
+            color: "#F8F8FF",
             fontSize: 16,
           }}
           placeholderTextColor="#6B7280"
@@ -58,14 +69,16 @@ export function AuthInput({ label, error, isPassword = false, ...props }: Props)
             onPress={() => setVisible((v) => !v)}
             style={{ paddingHorizontal: 14 }}
           >
-            <Text style={{ color: '#7B61FF', fontSize: 13, fontWeight: '600' }}>
-              {visible ? 'HIDE' : 'SHOW'}
+            <Text style={{ color: "#7B61FF", fontSize: 13, fontWeight: "600" }}>
+              {visible ? "HIDE" : "SHOW"}
             </Text>
           </TouchableOpacity>
         )}
       </View>
       {error ? (
-        <Text style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{error}</Text>
+        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 4 }}>
+          {error}
+        </Text>
       ) : null}
     </View>
   );

@@ -61,9 +61,12 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       set({ token: data.accessToken });
       await get().fetchProfile();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      const error = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
       const message =
-        error.response?.data?.error?.message ?? "Login failed. Please try again.";
+        error.response?.data?.error?.message ??
+        "Login failed. Please try again.";
       set({ error: message });
       throw err;
     } finally {
@@ -76,7 +79,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     try {
       await authApi.register({ email, username, password });
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      const error = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
       const message =
         error.response?.data?.error?.message ??
         "Registration failed. Please try again.";
