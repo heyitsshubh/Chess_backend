@@ -1,4 +1,4 @@
-import { MoveFlags } from '../core/Move';
+import { MoveFlags } from "../core/Move";
 
 export interface GameStateRecord {
   move: number; // 0 if none (start)
@@ -21,7 +21,9 @@ export class History {
   }
 
   public peek(): GameStateRecord | undefined {
-    return this.stack.length > 0 ? this.stack[this.stack.length - 1] : undefined;
+    return this.stack.length > 0
+      ? this.stack[this.stack.length - 1]
+      : undefined;
   }
 
   public clear() {

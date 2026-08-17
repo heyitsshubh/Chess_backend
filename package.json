@@ -10,6 +10,7 @@
     "infra:down": "cd docker && docker-compose down",
     "infra:logs": "cd docker && docker-compose logs -f",
     "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "test": "turbo run test",
     "prepare": "husky"

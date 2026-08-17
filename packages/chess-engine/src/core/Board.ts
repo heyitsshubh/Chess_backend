@@ -1,13 +1,18 @@
-import { Color, PieceType } from '../constants/Enums';
-import { Square } from '../constants/Squares';
-import { EMPTY_BB, checkBit, clearBit, setBit } from '../constants/Bitboards';
-import { ZOBRIST_CASTLING, ZOBRIST_EN_PASSANT, ZOBRIST_PIECES, ZOBRIST_SIDE } from './Zobrist';
+import { Color, PieceType } from "../constants/Enums";
+import { Square } from "../constants/Squares";
+import { EMPTY_BB, checkBit, clearBit, setBit } from "../constants/Bitboards";
+import {
+  ZOBRIST_CASTLING,
+  ZOBRIST_EN_PASSANT,
+  ZOBRIST_PIECES,
+  ZOBRIST_SIDE,
+} from "./Zobrist";
 
 export class Board {
   public pieces: bigint[]; // [whitePawns, ..., blackKing] mapped by color * 6 + pieceType
   public colors: bigint[]; // [whitePieces, blackPieces]
   public allPieces: bigint;
-  
+
   public castlingRights: number;
   public enPassantSquare: number; // Square enum or Square.NONE
   public halfMoveClock: number;
@@ -50,7 +55,9 @@ export class Board {
   public getPieceAt(square: number): { color: Color; piece: PieceType } | null {
     if (!checkBit(this.allPieces, square)) return null;
 
-    const color = checkBit(this.colors[Color.WHITE], square) ? Color.WHITE : Color.BLACK;
+    const color = checkBit(this.colors[Color.WHITE], square)
+      ? Color.WHITE
+      : Color.BLACK;
     for (let p = 0; p < 6; p++) {
       if (checkBit(this.pieces[color * 6 + p], square)) {
         return { color, piece: p };

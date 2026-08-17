@@ -1,4 +1,4 @@
-import { PieceType } from '../constants/Enums';
+import { PieceType } from "../constants/Enums";
 
 // Move encoding (16 bits):
 // 0-5: from square (0-63)
@@ -53,11 +53,16 @@ export class Move {
   static getPromotedPiece(move: number): PieceType {
     const flags = Move.getFlags(move);
     switch (flags & 3) {
-      case 0: return PieceType.KNIGHT;
-      case 1: return PieceType.BISHOP;
-      case 2: return PieceType.ROOK;
-      case 3: return PieceType.QUEEN;
-      default: return PieceType.PAWN; // Should never reach
+      case 0:
+        return PieceType.KNIGHT;
+      case 1:
+        return PieceType.BISHOP;
+      case 2:
+        return PieceType.ROOK;
+      case 3:
+        return PieceType.QUEEN;
+      default:
+        return PieceType.PAWN; // Should never reach
     }
   }
 }

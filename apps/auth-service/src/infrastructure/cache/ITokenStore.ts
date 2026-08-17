@@ -8,7 +8,11 @@
 
 export interface ITokenStore {
   // Refresh tokens
-  storeRefreshToken(userId: string, tokenId: string, rawToken: string): Promise<void>;
+  storeRefreshToken(
+    userId: string,
+    tokenId: string,
+    rawToken: string,
+  ): Promise<void>;
   validateRefreshToken(userId: string, tokenId: string): Promise<boolean>;
   revokeRefreshToken(userId: string, tokenId: string): Promise<void>;
   revokeAllRefreshTokens(userId: string): Promise<void>;

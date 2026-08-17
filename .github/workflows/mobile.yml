@@ -1,0 +1,166 @@
+# =============================================================
+# Mobile — Expo Application Services (EAS) Build & Submit
+#
+# Triggers:
+#   PR open/sync  → EAS preview build (internal distribution)
+#   Push to main  → EAS production build + store submission
+#
+# Required Secrets:
+#   EXPO_TOKEN        — Expo access token (expo.dev → Account Settings)
+#
+# Required EAS Setup:
+#   Run `eas build:configure` locally once before using this workflow.
+# =============================================================
+
+name: Mobile — EAS Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile-app/**'
+      - 'packages/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/mobile-app/**'
+      - 'packages/**'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options: [development, preview, production]
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'all'
+        type: choice
+        options: [android, ios, all]
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Job 1: TypeScript check for mobile app only
+  # ─────────────────────────────────────────────────────────────
+  mobile-typecheck:
+    name: Mobile TypeCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check (mobile)
+        working-directory: apps/mobile-app
+        run: npx tsc --noEmit
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 2a: EAS Preview Build (on PRs)
+  # ─────────────────────────────────────────────────────────────
+  eas-preview:
+    name: EAS Preview Build
+    runs-on: ubuntu-latest
+    needs: [mobile-typecheck]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build (preview)
+        working-directory: apps/mobile-app
+        run: |
+          eas build \
+            --profile preview \
+            --platform android \
+            --non-interactive \
+            --no-wait
+
+      - name: Post build link to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📱 **EAS Preview Build** triggered! Check [Expo dashboard](https://expo.dev/accounts/${{ secrets.EXPO_ACCOUNT }}/projects/chess-platform/builds) for the QR code once complete.'
+            })
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 2b: EAS Production Build + Submit (on main)
+  # ─────────────────────────────────────────────────────────────
+  eas-production:
+    name: EAS Production Build
+    runs-on: ubuntu-latest
+    needs: [mobile-typecheck]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build — Android (production)
+        working-directory: apps/mobile-app
+        run: |
+          eas build \
+            --profile production \
+            --platform android \
+            --non-interactive \
+            --no-wait
+
+      - name: EAS Build — iOS (production)
+        working-directory: apps/mobile-app
+        run: |
+          eas build \
+            --profile production \
+            --platform ios \
+            --non-interactive \
+            --no-wait

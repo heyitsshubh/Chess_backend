@@ -1,2 +1,2 @@
-export * from './ChessGame';
-export * from './History';
+export * from "./ChessGame";
+export * from "./History";

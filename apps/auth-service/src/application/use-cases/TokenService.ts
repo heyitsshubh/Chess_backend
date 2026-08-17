@@ -7,18 +7,18 @@
 // avoids duplication and makes it easy to rotate secrets or
 // change algorithm in one place.
 // ============================================================
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-import { createHash } from 'crypto';
-import { env } from '../../config/env';
-import { UserRole } from '../../domain/entities/User';
+import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
+import { createHash } from "crypto";
+import { env } from "../../config/env";
+import { UserRole } from "../../domain/entities/User";
 
 export interface JwtPayload {
-  sub: string;       // userId
+  sub: string; // userId
   email: string;
   username: string;
   role: UserRole;
-  tokenId: string;   // unique per token for revocation
+  tokenId: string; // unique per token for revocation
 }
 
 export interface TokenPair {
@@ -28,19 +28,19 @@ export interface TokenPair {
 }
 
 export class TokenService {
-  static generateTokenPair(payload: Omit<JwtPayload, 'tokenId'>): TokenPair {
+  static generateTokenPair(payload: Omit<JwtPayload, "tokenId">): TokenPair {
     const tokenId = uuidv4();
 
     const accessToken = jwt.sign(
       { ...payload, tokenId },
       env.JWT_ACCESS_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRES_IN as any }
+      { expiresIn: env.JWT_ACCESS_EXPIRES_IN as any },
     );
 
     const refreshToken = jwt.sign(
       { ...payload, tokenId },
       env.JWT_REFRESH_SECRET,
-      { expiresIn: env.JWT_REFRESH_EXPIRES_IN as any }
+      { expiresIn: env.JWT_REFRESH_EXPIRES_IN as any },
     );
 
     return { accessToken, refreshToken, refreshTokenId: tokenId };
@@ -57,7 +57,7 @@ export class TokenService {
   // Hash tokens before storing in Redis — if Redis is breached,
   // raw tokens cannot be used directly.
   static hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+    return createHash("sha256").update(token).digest("hex");
   }
 
   // Generate a short numeric OTP for email verification
@@ -67,6 +67,6 @@ export class TokenService {
 
   // Generate a secure random token for password reset
   static generateSecureToken(): string {
-    return uuidv4().replace(/-/g, '');
+    return uuidv4().replace(/-/g, "");
   }
 }

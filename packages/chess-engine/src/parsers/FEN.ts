@@ -1,8 +1,9 @@
-import { Board } from '../core/Board';
-import { Color, PieceType, CastlingRights } from '../constants/Enums';
-import { Square, squareToIndex, SQUARE_NAMES } from '../constants/Squares';
+import { Board } from "../core/Board";
+import { Color, PieceType, CastlingRights } from "../constants/Enums";
+import { Square, squareToIndex, SQUARE_NAMES } from "../constants/Squares";
 
-export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+export const START_FEN =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const CHAR_TO_PIECE: Record<string, { color: Color; piece: PieceType }> = {
   P: { color: Color.WHITE, piece: PieceType.PAWN },
@@ -19,12 +20,12 @@ const CHAR_TO_PIECE: Record<string, { color: Color; piece: PieceType }> = {
   k: { color: Color.BLACK, piece: PieceType.KING },
 };
 
-const PIECE_TO_CHAR = ['P', 'N', 'B', 'R', 'Q', 'K'];
+const PIECE_TO_CHAR = ["P", "N", "B", "R", "Q", "K"];
 
 export class FEN {
   static parse(fen: string, board: Board): void {
-    const parts = fen.split(' ');
-    if (parts.length !== 6) throw new Error('Invalid FEN string');
+    const parts = fen.split(" ");
+    if (parts.length !== 6) throw new Error("Invalid FEN string");
 
     const [pieces, side, castling, enPassant, halfMove, fullMove] = parts;
 
@@ -39,7 +40,7 @@ export class FEN {
     let file = 0;
     for (let i = 0; i < pieces.length; i++) {
       const char = pieces[i];
-      if (char === '/') {
+      if (char === "/") {
         rank--;
         file = 0;
       } else if (/\d/.test(char)) {
@@ -53,23 +54,23 @@ export class FEN {
     }
 
     // 3. Side to move
-    board.sideToMove = side === 'w' ? Color.WHITE : Color.BLACK;
+    board.sideToMove = side === "w" ? Color.WHITE : Color.BLACK;
     if (board.sideToMove === Color.BLACK) {
       board.updateHashSide();
     }
 
     // 4. Castling Rights
     let rights = 0;
-    if (castling !== '-') {
-      if (castling.includes('K')) rights |= CastlingRights.WHITE_KINGSIDE;
-      if (castling.includes('Q')) rights |= CastlingRights.WHITE_QUEENSIDE;
-      if (castling.includes('k')) rights |= CastlingRights.BLACK_KINGSIDE;
-      if (castling.includes('q')) rights |= CastlingRights.BLACK_QUEENSIDE;
+    if (castling !== "-") {
+      if (castling.includes("K")) rights |= CastlingRights.WHITE_KINGSIDE;
+      if (castling.includes("Q")) rights |= CastlingRights.WHITE_QUEENSIDE;
+      if (castling.includes("k")) rights |= CastlingRights.BLACK_KINGSIDE;
+      if (castling.includes("q")) rights |= CastlingRights.BLACK_QUEENSIDE;
     }
     board.updateHashCastling(board.castlingRights, rights);
 
     // 5. En Passant
-    const epSquare = enPassant === '-' ? Square.NONE : squareToIndex(enPassant);
+    const epSquare = enPassant === "-" ? Square.NONE : squareToIndex(enPassant);
     board.updateHashEnPassant(board.enPassantSquare, epSquare);
 
     // 6. Move counters
@@ -78,8 +79,8 @@ export class FEN {
   }
 
   static stringify(board: Board): string {
-    let fen = '';
-    
+    let fen = "";
+
     // 1. Pieces
     for (let rank = 7; rank >= 0; rank--) {
       let empty = 0;
@@ -99,22 +100,22 @@ export class FEN {
         }
       }
       if (empty > 0) fen += empty.toString();
-      if (rank > 0) fen += '/';
+      if (rank > 0) fen += "/";
     }
 
     // 2. Side
-    fen += ` ${board.sideToMove === Color.WHITE ? 'w' : 'b'}`;
+    fen += ` ${board.sideToMove === Color.WHITE ? "w" : "b"}`;
 
     // 3. Castling
-    let castling = '';
-    if (board.castlingRights & CastlingRights.WHITE_KINGSIDE) castling += 'K';
-    if (board.castlingRights & CastlingRights.WHITE_QUEENSIDE) castling += 'Q';
-    if (board.castlingRights & CastlingRights.BLACK_KINGSIDE) castling += 'k';
-    if (board.castlingRights & CastlingRights.BLACK_QUEENSIDE) castling += 'q';
-    fen += ` ${castling || '-'}`;
+    let castling = "";
+    if (board.castlingRights & CastlingRights.WHITE_KINGSIDE) castling += "K";
+    if (board.castlingRights & CastlingRights.WHITE_QUEENSIDE) castling += "Q";
+    if (board.castlingRights & CastlingRights.BLACK_KINGSIDE) castling += "k";
+    if (board.castlingRights & CastlingRights.BLACK_QUEENSIDE) castling += "q";
+    fen += ` ${castling || "-"}`;
 
     // 4. En Passant
-    fen += ` ${board.enPassantSquare === Square.NONE ? '-' : SQUARE_NAMES[board.enPassantSquare]}`;
+    fen += ` ${board.enPassantSquare === Square.NONE ? "-" : SQUARE_NAMES[board.enPassantSquare]}`;
 
     // 5 & 6. Counters
     fen += ` ${board.halfMoveClock} ${board.fullMoveNumber}`;

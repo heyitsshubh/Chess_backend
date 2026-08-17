@@ -1,2 +1,2 @@
-export * from './Attacks';
-export * from './MoveGenerator';
+export * from "./Attacks";
+export * from "./MoveGenerator";

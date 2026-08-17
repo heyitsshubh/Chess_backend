@@ -2,7 +2,7 @@
 // Core Types and Interfaces
 // ============================================================
 
-export type TimeControl = '1|0' | '3|0' | '10|0';
+export type TimeControl = "1|0" | "3|0" | "10|0";
 
 export interface PlayerSession {
   userId: string;
@@ -28,5 +28,5 @@ export interface ActiveGame {
   whiteTime: number;
   blackTime: number;
   lastMoveTimestamp: number; // Unix epoch of last move
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
+  status: "IN_PROGRESS" | "COMPLETED" | "ABORTED";
 }

@@ -4,10 +4,10 @@
 // Manages matchmaking and live game state.
 // Follows SRP - only responsible for chess game state.
 // ============================================================
-import { create } from 'zustand';
+import { create } from "zustand";
 
-export type GameStatus = 'idle' | 'searching' | 'playing' | 'ended';
-export type PieceColor = 'white' | 'black';
+export type GameStatus = "idle" | "searching" | "playing" | "ended";
+export type PieceColor = "white" | "black";
 
 export interface PlayerInfo {
   userId: string;
@@ -26,7 +26,7 @@ export interface ActiveGame {
   blackTime: number;
   currentTurn: PieceColor;
   status: GameStatus;
-  winner?: PieceColor | 'draw';
+  winner?: PieceColor | "draw";
   endReason?: string;
 }
 
@@ -41,9 +41,15 @@ interface GameState {
 interface GameActions {
   setSearching: () => void;
   setIdle: () => void;
-  initGame: (data: { gameId: string; fen: string; white: PlayerInfo; black: PlayerInfo; myUserId: string }) => void;
+  initGame: (data: {
+    gameId: string;
+    fen: string;
+    white: PlayerInfo;
+    black: PlayerInfo;
+    myUserId: string;
+  }) => void;
   applyMove: (fen: string, whiteTime: number, blackTime: number) => void;
-  endGame: (winner: PieceColor | 'draw', reason: string) => void;
+  endGame: (winner: PieceColor | "draw", reason: string) => void;
   selectSquare: (square: number | null) => void;
   setValidMoves: (moves: number[]) => void;
   clearError: () => void;
@@ -51,7 +57,7 @@ interface GameActions {
 }
 
 const initialState: GameState = {
-  status: 'idle',
+  status: "idle",
   game: null,
   selectedSquare: null,
   validMoves: [],
@@ -61,13 +67,13 @@ const initialState: GameState = {
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
-  setSearching: () => set({ status: 'searching' }),
-  setIdle: () => set({ status: 'idle', game: null }),
+  setSearching: () => set({ status: "searching" }),
+  setIdle: () => set({ status: "idle", game: null }),
 
   initGame: ({ gameId, fen, white, black, myUserId }) => {
-    const myColor: PieceColor = white.userId === myUserId ? 'white' : 'black';
+    const myColor: PieceColor = white.userId === myUserId ? "white" : "black";
     set({
-      status: 'playing',
+      status: "playing",
       game: {
         gameId,
         fen,
@@ -76,8 +82,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         myColor,
         whiteTime: 180_000,
         blackTime: 180_000,
-        currentTurn: 'white',
-        status: 'playing',
+        currentTurn: "white",
+        status: "playing",
       },
     });
   },
@@ -85,7 +91,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   applyMove: (fen, whiteTime, blackTime) => {
     const { game } = get();
     if (!game) return;
-    const currentTurn: PieceColor = game.currentTurn === 'white' ? 'black' : 'white';
+    const currentTurn: PieceColor =
+      game.currentTurn === "white" ? "black" : "white";
     set({
       game: { ...game, fen, whiteTime, blackTime, currentTurn },
       selectedSquare: null,
@@ -96,7 +103,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   endGame: (winner, reason) => {
     const { game } = get();
     if (!game) return;
-    set({ game: { ...game, status: 'ended', winner, endReason: reason }, status: 'ended' });
+    set({
+      game: { ...game, status: "ended", winner, endReason: reason },
+      status: "ended",
+    });
   },
 
   selectSquare: (square) => set({ selectedSquare: square }),
