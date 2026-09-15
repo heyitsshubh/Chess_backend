@@ -1,12 +1,4 @@
-# =============================================================
-# Auth Service — Optimised Multi-stage Dockerfile
-#
-# Stage 1 (deps):    install ALL deps (dev + prod) for building
-# Stage 2 (builder): compile TypeScript → dist/
-# Stage 3 (runner):  minimal runtime image — no dev deps, no src
-# =============================================================
 
-# ---- Stage 1: Install all dependencies ----
 FROM node:20-alpine AS deps
 RUN npm install -g pnpm@9
 WORKDIR /app
