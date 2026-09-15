@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable prettier/prettier */
 // ============================================================
 // API Configuration
 //
@@ -46,9 +48,13 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Avoid infinite loop if refresh request itself fails with 401
-    if (error.response?.status === 401 && originalRequest.url === "/auth/refresh") {
+    if (
+      error.response?.status === 401 &&
+      originalRequest.url === "/auth/refresh"
+    ) {
       await SecureStore.deleteItemAsync("accessToken");
       try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { useAuthStore } = require("../store/authStore");
         useAuthStore.setState({ token: null, user: null });
       } catch (e) {
@@ -85,6 +91,7 @@ apiClient.interceptors.response.use(
             await SecureStore.setItemAsync("accessToken", newAccessToken);
             
             try {
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
               const { useAuthStore } = require("../store/authStore");
               useAuthStore.setState({ token: newAccessToken });
             } catch (e) {
