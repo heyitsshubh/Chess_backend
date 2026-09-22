@@ -1,248 +1,216 @@
-// ============================================================
-// Home / Lobby Screen
-//
-// Shows user stats, ELO, and time control selection.
-// Entry point for matchmaking.
+﻿// ============================================================
+// Home / Lobby Screen — Material Design 3
 // ============================================================
 import React, { useState } from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
 import {
-  View,
   Text,
-  ScrollView,
-  TouchableOpacity,
+  Surface,
+  Chip,
   ActivityIndicator,
-} from "react-native";
+  Button,
+  Avatar,
+  Divider,
+  Badge,
+} from "react-native-paper";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useAuthStore } from "@/store/authStore";
 import { useGameStore } from "@/store/gameStore";
 import { useSocket } from "@/hooks/useSocket";
+import { MD_COLORS } from "@/theme";
 
 const TIME_CONTROLS = [
-  { label: "1 min", value: "1|0", icon: "⚡", tag: "Bullet" },
-  { label: "3 min", value: "3|0", icon: "🔥", tag: "Blitz" },
-  { label: "5 min", value: "5|0", icon: "⏱", tag: "Blitz" },
-  { label: "10 min", value: "10|0", icon: "♟", tag: "Rapid" },
+  { label: "1 min", value: "1|0", icon: "lightning-bolt", tag: "Bullet" },
+  { label: "3 min", value: "3|0", icon: "fire",            tag: "Blitz"  },
+  { label: "5 min", value: "5|0", icon: "timer-outline",   tag: "Blitz"  },
+  { label: "10 min", value: "10|0", icon: "chess-knight",  tag: "Rapid"  },
+];
+
+const STAT_ROWS = [
+  { key: "W", label: "Wins",   color: MD_COLORS.win  },
+  { key: "D", label: "Draws",  color: MD_COLORS.draw },
+  { key: "L", label: "Losses", color: MD_COLORS.loss },
 ];
 
 export default function HomeScreen() {
-  const user = useAuthStore((s) => s.user);
+  const user   = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const status = useGameStore((s) => s.status);
-  const game = useGameStore((s) => s.game);
+  const game   = useGameStore((s) => s.game);
   const { joinQueue, leaveQueue } = useSocket();
-
-  const [selectedTimeControl, setSelectedTimeControl] = useState("3|0");
+  const [selected, setSelected] = useState("3|0");
 
   const handleFindGame = () => {
     useGameStore.getState().setSearching();
-    joinQueue(selectedTimeControl);
+    joinQueue(selected);
   };
 
-  const handleCancel = () => {
-    leaveQueue();
-  };
-
-  // Navigate to game screen when match is found
   React.useEffect(() => {
-    if (status === "playing" && game) {
-      router.push("/(app)/game");
-    }
+    if (status === "playing" && game) router.push("/(app)/game");
   }, [status, game]);
 
+  const initials = user?.username?.[0]?.toUpperCase() ?? "?";
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0D0D0F" }}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {/* Top Bar */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 28,
-          }}
-        >
-          <View>
-            <Text style={{ color: "#9CA3AF", fontSize: 13 }}>Welcome back</Text>
-            <Text style={{ color: "#F8F8FF", fontSize: 22, fontWeight: "800" }}>
-              {user?.username ?? "—"}
-            </Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Top App Bar ── */}
+        <View style={styles.topBar}>
+          <View style={styles.userRow}>
+            <Avatar.Text size={44} label={initials} style={styles.avatar} />
+            <View style={{ marginLeft: 12 }}>
+              <Text variant="labelSmall" style={styles.welcomeLabel}>Welcome back</Text>
+              <Text variant="titleMedium" style={styles.username}>{user?.username ?? "—"}</Text>
+            </View>
           </View>
-          <TouchableOpacity
+          <Button
+            mode="outlined"
             onPress={logout}
-            style={{
-              backgroundColor: "#1C1C22",
-              borderRadius: 10,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderWidth: 1,
-              borderColor: "#2A2A35",
-            }}
+            icon="logout"
+            compact
+            textColor={MD_COLORS.onSurfaceVariant}
+            style={styles.logoutBtn}
           >
-            <Text style={{ color: "#9CA3AF", fontSize: 13, fontWeight: "600" }}>
-              Sign Out
-            </Text>
-          </TouchableOpacity>
+            Sign Out
+          </Button>
         </View>
 
-        {/* Stats Card */}
-        <LinearGradient
-          colors={["#1C1524", "#16161A"]}
-          style={{
-            borderRadius: 20,
-            padding: 20,
-            marginBottom: 24,
-            borderWidth: 1,
-            borderColor: "#7B61FF33",
-          }}
-        >
-          <Text
-            style={{
-              color: "#9CA3AF",
-              fontSize: 12,
-              fontWeight: "600",
-              letterSpacing: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            Your Rating
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "baseline",
-              gap: 6,
-              marginTop: 8,
-            }}
-          >
-            <Text style={{ color: "#7B61FF", fontSize: 52, fontWeight: "900" }}>
-              1200
-            </Text>
-            <Text style={{ color: "#9CA3AF", fontSize: 16 }}>ELO</Text>
+        {/* ── Rating Card ── */}
+        <Surface style={styles.ratingCard} elevation={3}>
+          <View style={styles.ratingHeader}>
+            <Text variant="labelMedium" style={styles.ratingLabel}>YOUR RATING</Text>
+            <Badge style={styles.badge}>Unranked</Badge>
           </View>
-          <View style={{ flexDirection: "row", gap: 20, marginTop: 16 }}>
-            {[
-              ["W", "0", "#22C55E"],
-              ["D", "0", "#F59E0B"],
-              ["L", "0", "#EF4444"],
-            ].map(([label, val, color]) => (
-              <View key={label}>
-                <Text
-                  style={{ color: "#6B7280", fontSize: 11, fontWeight: "600" }}
-                >
-                  {label}
-                </Text>
-                <Text
-                  style={{
-                    color: color as string,
-                    fontSize: 20,
-                    fontWeight: "800",
-                  }}
-                >
-                  {val}
-                </Text>
+          <View style={styles.ratingRow}>
+            <Text variant="displayMedium" style={styles.ratingNum}>1200</Text>
+            <Text variant="titleSmall" style={styles.eloLabel}>ELO</Text>
+          </View>
+          <Divider style={styles.divider} />
+          <View style={styles.statsRow}>
+            {STAT_ROWS.map(({ key, label, color }) => (
+              <View key={key} style={styles.statItem}>
+                <Text variant="displaySmall" style={[styles.statNum, { color }]}>0</Text>
+                <Text variant="labelSmall" style={styles.statLabel}>{label}</Text>
               </View>
             ))}
           </View>
-        </LinearGradient>
+        </Surface>
 
-        {/* Time Control Selection */}
-        <Text
-          style={{
-            color: "#F8F8FF",
-            fontSize: 18,
-            fontWeight: "700",
-            marginBottom: 14,
-          }}
-        >
-          Choose Time Control
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            marginBottom: 28,
-          }}
-        >
-          {TIME_CONTROLS.map((tc) => {
-            const isSelected = selectedTimeControl === tc.value;
-            return (
-              <TouchableOpacity
-                key={tc.value}
-                onPress={() => setSelectedTimeControl(tc.value)}
-                activeOpacity={0.8}
-                style={{
-                  flex: 1,
-                  minWidth: "45%",
-                  backgroundColor: isSelected ? "#1C1524" : "#16161A",
-                  borderRadius: 16,
-                  padding: 16,
-                  alignItems: "center",
-                  borderWidth: 2,
-                  borderColor: isSelected ? "#7B61FF" : "#2A2A35",
-                }}
-              >
-                <Text style={{ fontSize: 28, marginBottom: 4 }}>{tc.icon}</Text>
-                <Text
-                  style={{ color: "#F8F8FF", fontSize: 18, fontWeight: "800" }}
-                >
-                  {tc.label}
-                </Text>
-                <Text style={{ color: "#9CA3AF", fontSize: 12 }}>{tc.tag}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        {/* ── Time Control ── */}
+        <Text variant="titleMedium" style={styles.sectionTitle}>Choose Time Control</Text>
+        <View style={styles.chipGrid}>
+          {TIME_CONTROLS.map((tc) => (
+            <Chip
+              key={tc.value}
+              selected={selected === tc.value}
+              onPress={() => setSelected(tc.value)}
+              icon={tc.icon}
+              style={[
+                styles.chip,
+                selected === tc.value && styles.chipSelected,
+              ]}
+              textStyle={[
+                styles.chipText,
+                selected === tc.value && styles.chipTextSelected,
+              ]}
+              showSelectedCheck={false}
+            >
+              {tc.label} · {tc.tag}
+            </Chip>
+          ))}
         </View>
 
-        {/* Play Button / Searching State */}
+        {/* ── Play / Searching ── */}
         {status === "searching" ? (
-          <View
-            style={{
-              backgroundColor: "#16161A",
-              borderRadius: 16,
-              padding: 24,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#7B61FF",
-            }}
-          >
-            <ActivityIndicator
-              color="#7B61FF"
-              size="large"
-              style={{ marginBottom: 14 }}
-            />
-            <Text style={{ color: "#F8F8FF", fontSize: 17, fontWeight: "700" }}>
-              Finding an opponent...
+          <Surface style={styles.searchingCard} elevation={2}>
+            <ActivityIndicator size="large" color={MD_COLORS.primary} style={{ marginBottom: 16 }} />
+            <Text variant="titleMedium" style={styles.searchingTitle}>Finding Opponent…</Text>
+            <Text variant="bodySmall" style={styles.searchingSubtitle}>
+              {TIME_CONTROLS.find((t) => t.value === selected)?.label} game
             </Text>
-            <Text
-              style={{
-                color: "#9CA3AF",
-                fontSize: 13,
-                marginTop: 4,
-                marginBottom: 16,
-              }}
+            <Button
+              mode="text"
+              onPress={leaveQueue}
+              textColor={MD_COLORS.error}
+              icon="close-circle-outline"
+              style={{ marginTop: 12 }}
             >
-              {
-                TIME_CONTROLS.find((t) => t.value === selectedTimeControl)
-                  ?.label
-              }{" "}
-              game
-            </Text>
-            <TouchableOpacity onPress={handleCancel}>
-              <Text
-                style={{ color: "#EF4444", fontSize: 14, fontWeight: "700" }}
-              >
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
+              Cancel
+            </Button>
+          </Surface>
         ) : (
-          <GradientButton label="🎮  Find a Game" onPress={handleFindGame} />
+          <GradientButton
+            label="Find a Game"
+            onPress={handleFindGame}
+            icon="chess-king"
+            style={styles.playBtn}
+          />
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: MD_COLORS.background },
+  scroll: { padding: 20, paddingBottom: 40 },
+
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
+  userRow: { flexDirection: "row", alignItems: "center" },
+  avatar: { backgroundColor: MD_COLORS.primaryContainer },
+  welcomeLabel: { color: MD_COLORS.onSurfaceVariant },
+  username: { color: MD_COLORS.onSurface, fontWeight: "700" },
+  logoutBtn: { borderColor: MD_COLORS.outline, borderRadius: 20 },
+
+  ratingCard: {
+    backgroundColor: MD_COLORS.surfaceVariant,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 28,
+  },
+  ratingHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  ratingLabel: { color: MD_COLORS.onSurfaceVariant, letterSpacing: 1 },
+  badge: { backgroundColor: MD_COLORS.primaryContainer, color: "#E9DDFF" },
+  ratingRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 },
+  ratingNum: { color: MD_COLORS.primary, fontWeight: "900" },
+  eloLabel: { color: MD_COLORS.onSurfaceVariant },
+  divider: { backgroundColor: MD_COLORS.outline, marginVertical: 16, opacity: 0.3 },
+  statsRow: { flexDirection: "row", justifyContent: "space-around" },
+  statItem: { alignItems: "center" },
+  statNum: { fontWeight: "800" },
+  statLabel: { color: MD_COLORS.onSurfaceVariant, marginTop: 2 },
+
+  sectionTitle: { color: MD_COLORS.onSurface, fontWeight: "700", marginBottom: 12 },
+  chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 28 },
+  chip: {
+    backgroundColor: MD_COLORS.surface,
+    borderWidth: 1,
+    borderColor: MD_COLORS.outline,
+    borderRadius: 12,
+    flex: 1,
+    minWidth: "45%",
+    height: 48,
+  },
+  chipSelected: {
+    backgroundColor: MD_COLORS.primaryContainer,
+    borderColor: MD_COLORS.primary,
+  },
+  chipText: { color: MD_COLORS.onSurface, fontSize: 14 },
+  chipTextSelected: { color: "#E9DDFF", fontWeight: "700" },
+
+  searchingCard: {
+    backgroundColor: MD_COLORS.surface,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: MD_COLORS.primary + "66",
+  },
+  searchingTitle: { color: MD_COLORS.onSurface, fontWeight: "700" },
+  searchingSubtitle: { color: MD_COLORS.onSurfaceVariant, marginTop: 4 },
+
+  playBtn: { borderRadius: 16 },
+});

@@ -1,85 +1,60 @@
 // ============================================================
-// AuthInput Component
-//
-// Glassmorphic styled input for auth forms.
+// AuthInput — Material Design 3 TextInput wrapper
 // ============================================================
 import React, { useState } from "react";
-import {
-  View,
-  TextInput,
-  Text,
-  TouchableOpacity,
-  TextInputProps,
-} from "react-native";
+import { View, StyleSheet } from "react-native";
+import { TextInput, HelperText, useTheme } from "react-native-paper";
+import type { TextInputProps } from "react-native-paper";
 
-interface Props extends TextInputProps {
+interface Props extends Omit<TextInputProps, "mode" | "error"> {
   label: string;
   error?: string;
   isPassword?: boolean;
 }
 
-export function AuthInput({
-  label,
-  error,
-  isPassword = false,
-  ...props
-}: Props) {
+export function AuthInput({ label, error, isPassword = false, ...props }: Props) {
+  const theme = useTheme();
   const [visible, setVisible] = useState(false);
 
   return (
-    <View style={{ marginBottom: 16 }}>
-      <Text
-        style={{
-          color: "#9CA3AF",
-          fontSize: 12,
-          fontWeight: "600",
-          letterSpacing: 1,
-          textTransform: "uppercase",
-          marginBottom: 8,
-        }}
-      >
-        {label}
-      </Text>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "#1C1C22",
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: error ? "#EF4444" : "#2A2A35",
-        }}
-      >
-        <TextInput
-          {...props}
-          secureTextEntry={isPassword && !visible}
-          style={{
-            flex: 1,
-            paddingVertical: 14,
-            paddingHorizontal: 16,
-            color: "#F8F8FF",
-            fontSize: 16,
-          }}
-          placeholderTextColor="#6B7280"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {isPassword && (
-          <TouchableOpacity
-            onPress={() => setVisible((v) => !v)}
-            style={{ paddingHorizontal: 14 }}
-          >
-            <Text style={{ color: "#7B61FF", fontSize: 13, fontWeight: "600" }}>
-              {visible ? "HIDE" : "SHOW"}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <View style={styles.container}>
+      <TextInput
+        {...props}
+        label={label}
+        mode="outlined"
+        secureTextEntry={isPassword && !visible}
+        right={
+          isPassword ? (
+            <TextInput.Icon
+              icon={visible ? "eye-off" : "eye"}
+              onPress={() => setVisible((v) => !v)}
+              color={theme.colors.primary}
+            />
+          ) : undefined
+        }
+        error={!!error}
+        style={[styles.input, { backgroundColor: theme.colors.surface }]}
+        outlineStyle={styles.outline}
+        contentStyle={styles.content}
+        textColor={theme.colors.onSurface}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
       {error ? (
-        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 4 }}>
+        <HelperText type="error" visible={!!error} style={styles.helper}>
           {error}
-        </Text>
+        </HelperText>
       ) : null}
     </View>
   );
 }
+
+AuthInput.Icon = TextInput.Icon;
+
+const styles = StyleSheet.create({
+  container: { marginBottom: 12 },
+  input: { height: 56 },
+  outline: { borderRadius: 12 },
+  content: { fontSize: 16 },
+  helper: { marginTop: -4, marginLeft: -4 },
+});
