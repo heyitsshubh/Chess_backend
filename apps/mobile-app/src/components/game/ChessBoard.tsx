@@ -138,6 +138,21 @@ interface Props {
   isMyTurn: boolean;
 }
 
+import { ChessGame } from "@chess/engine";
+
+export function uiToEngine(uiIndex: number): number {
+  const r = Math.floor(uiIndex / 8);
+  const c = uiIndex % 8;
+  return (7 - r) * 8 + c;
+}
+
+export function engineToUi(engineIndex: number): number {
+  const rank = Math.floor(engineIndex / 8);
+  const file = engineIndex % 8;
+  const r = 7 - rank;
+  return r * 8 + file;
+}
+
 export function ChessBoard({ fen, myColor, onMove, isMyTurn }: Props) {
   const selectedSquare = useGameStore((s) => s.selectedSquare);
   const validMoves = useGameStore((s) => s.validMoves);
@@ -151,6 +166,22 @@ export function ChessBoard({ fen, myColor, onMove, isMyTurn }: Props) {
   const indices = flipped
     ? Array.from({ length: 64 }, (_, i) => 63 - i)
     : Array.from({ length: 64 }, (_, i) => i);
+
+  const getValidMovesForSquare = useCallback(
+    (uiIndex: number): number[] => {
+      try {
+        const engineSq = uiToEngine(uiIndex);
+        const gameEngine = new ChessGame(fen);
+        const allMoves = gameEngine.generateLegalMoves();
+        return allMoves
+          .filter((m) => (m & 0x3f) === engineSq)
+          .map((m) => engineToUi((m >> 6) & 0x3f));
+      } catch {
+        return [];
+      }
+    },
+    [fen],
+  );
 
   const handlePress = useCallback(
     (index: number) => {
@@ -166,8 +197,7 @@ export function ChessBoard({ fen, myColor, onMove, isMyTurn }: Props) {
             : piece === piece.toLowerCase();
         if (!isMyPiece) return;
         selectSquare(index);
-        // TODO: Compute valid moves from engine for this square
-        setValidMoves([]);
+        setValidMoves(getValidMovesForSquare(index));
       } else {
         // Either move or re-select
         if (index === selectedSquare) {
@@ -183,7 +213,7 @@ export function ChessBoard({ fen, myColor, onMove, isMyTurn }: Props) {
             : piece === piece.toLowerCase());
         if (isMyPiece) {
           selectSquare(index);
-          setValidMoves([]);
+          setValidMoves(getValidMovesForSquare(index));
           return;
         }
         onMove(selectedSquare, index);
@@ -191,7 +221,7 @@ export function ChessBoard({ fen, myColor, onMove, isMyTurn }: Props) {
         setValidMoves([]);
       }
     },
-    [selectedSquare, board, myColor, isMyTurn, onMove],
+    [selectedSquare, board, myColor, isMyTurn, onMove, getValidMovesForSquare],
   );
 
   return (
