@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // Live Game Screen — Material Design 3
 // ============================================================
 import React, { useCallback } from "react";
@@ -6,7 +6,7 @@ import { View, StyleSheet, Alert } from "react-native";
 import { Text, Surface, Button, Icon } from "react-native-paper";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChessBoard } from "@/components/game/ChessBoard";
+import { ChessBoard, uiToEngine } from "@/components/game/ChessBoard";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useGameStore } from "@/store/gameStore";
@@ -24,7 +24,9 @@ export default function GameScreen() {
   const handleMove = useCallback(
     (from: number, to: number) => {
       if (!game) return;
-      const moveEncoded = (from << 6) | to;
+      const fromEngine = uiToEngine(from);
+      const toEngine = uiToEngine(to);
+      const moveEncoded = (toEngine << 6) | fromEngine;
       sendMove(game.gameId, moveEncoded);
     },
     [game, sendMove],

@@ -96,9 +96,23 @@ export class GameRoomService {
       sideToMove === 0 ? game.white.userId : game.black.userId;
     if (userId !== expectedUserId) return { valid: false };
 
-    // Verify move legality
+    // Extract fromSquare and toSquare from encodedMove
+    const fromSquare = encodedMove & 0x3f;
+    const toSquare = (encodedMove >> 6) & 0x3f;
+
+    // Verify move legality by matching from and to squares against legal moves
     const legalMoves = chess.generateLegalMoves();
-    if (!legalMoves.includes(encodedMove)) return { valid: false };
+    const matchedMove = legalMoves.find(
+      (m) => (m & 0x3f) === fromSquare && ((m >> 6) & 0x3f) === toSquare,
+    );
+
+    if (matchedMove === undefined) {
+      logger.warn(
+        { gameId, userId, fromSquare, toSquare, encodedMove },
+        "Illegal move attempted",
+      );
+      return { valid: false };
+    }
 
     // Update clocks
     const now = Date.now();
@@ -112,8 +126,8 @@ export class GameRoomService {
     }
     game.lastMoveTimestamp = now;
 
-    // Make move in engine
-    chess.makeMove(encodedMove);
+    // Make move in engine using full matchedMove with flags
+    chess.makeMove(matchedMove);
     game.fen = chess.getFen();
 
     // Check for mate/stalemate
