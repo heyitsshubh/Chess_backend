@@ -4,14 +4,15 @@
 
 **A production-grade, real-time multiplayer chess platform built as a TypeScript monorepo.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-9.x-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-9.7-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-2.x-EF4444?style=flat-square&logo=turborepo&logoColor=white)](https://turbo.build/)
 [![Expo](https://img.shields.io/badge/Expo-53-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
+[![Material Design 3](https://img.shields.io/badge/Material_Design_3-React_Native_Paper-6750A4?style=flat-square&logo=materialdesign&logoColor=white)](https://callstack.github.io/react-native-paper/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-[Architecture](#architecture) · [Services](#services) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started) · [API Reference](#api-reference) · [Contributing](#contributing)
+[Architecture](#architecture) · [Services](#services) · [Mobile Client](#-mobile-client-appsmobile-app) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started) · [Testing & Bot](#bot-testing-utility) · [API Reference](#api-reference)
 
 </div>
 
@@ -19,9 +20,9 @@
 
 ## Overview
 
-Chess Platform is a full-stack, microservice-based chess application designed with production engineering principles. It features a **React Native mobile client**, two independently deployable **backend services**, a custom **chess engine**, a **gRPC inter-service communication layer**, and a full **event-driven architecture** backed by Apache Kafka.
+Chess Platform is a full-stack, microservice-based chess application built with production engineering principles. It features a **Material Design 3 React Native mobile client**, two independently deployable **backend microservices**, a custom **bitboard chess engine**, a **gRPC inter-service communication layer**, and an **event-driven architecture** backed by Apache Kafka.
 
-The entire codebase lives in a single **pnpm monorepo** orchestrated with **Turborepo** for incremental builds and parallel task execution.
+The monorepo is managed with **pnpm** and orchestrated by **Turborepo** for parallel execution, strict type-safety, and unified React 19 overrides.
 
 ---
 
@@ -30,7 +31,7 @@ The entire codebase lives in a single **pnpm monorepo** orchestrated with **Turb
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        Mobile Client (Expo)                         │
-│          React Native · Expo Router · NativeWind · Zustand          │
+│     React Native · Material Design 3 (Paper) · Expo Router · Zustand │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ HTTP/REST + WebSocket
                                ▼
@@ -52,7 +53,7 @@ The entire codebase lives in a single **pnpm monorepo** orchestrated with **Turb
 │  Prisma + Postgres   │                    │  Prisma + Postgres       │
 │  Redis (sessions)    │                    │  Redis (queues/pub-sub)  │
 │  Resend (email)      │                    │  Kafka (event sourcing)  │
-│  bcrypt + zod        │                    │  Chess Engine (WASM)     │
+│  bcrypt + zod        │                    │  Chess Engine            │
 └──────────────────────┘                    └──────────────────────────┘
           │                                               │
           ▼                                               ▼
@@ -61,23 +62,23 @@ The entire codebase lives in a single **pnpm monorepo** orchestrated with **Turb
   │  (PostgreSQL) │                            │  (PostgreSQL)        │
   └───────────────┘                            └──────────────────────┘
                           ┌──────────────┐
-                          │    Redis     │  ← Shared cache + pub/sub
+                          │    Redis     │  ← Shared cache + queue
                           └──────────────┘
                           ┌──────────────┐
                           │    Kafka     │  ← Event bus (game events)
                           └──────────────┘
 ```
 
-### Key Design Decisions
+### Key Architectural Highlights
 
-| Decision | Rationale |
-|----------|-----------|
-| **Microservices** | Auth and Game concerns are fully isolated; each service owns its database and can be scaled independently |
-| **gRPC** | High-performance, type-safe inter-service communication for ELO fetching during matchmaking |
-| **NGINX Gateway** | Single entry point for all clients; handles WebSocket upgrades, rate limiting, and routing |
-| **Event Sourcing (Kafka)** | Game moves and outcomes published as immutable events; enables replay, analytics, and future services |
-| **Isolated Prisma schemas** | Each service generates its own Prisma client to prevent schema collision in the monorepo |
-| **Turborepo** | Incremental, cached builds with parallel task execution across all packages |
+| Feature | Engineering Implementation |
+|---------|----------------------------|
+| **Microservices** | Auth and Game domains are fully isolated; each service owns its Postgres DB & Prisma schema. |
+| **Material Design 3 UI** | Built with `react-native-paper` featuring a dark mode palette, surface elevations, and interactive chips/badges. |
+| **gRPC Inter-service RPC** | High-performance gRPC connection (`:50051`) for Game Service to fetch player ELO directly from Auth Service. |
+| **Bitboard Chess Engine** | Custom 64-bit bitboard engine (`@chess/engine`) handling FEN parsing, 16-bit move encoding, and move generation. |
+| **NGINX Gateway** | Single entry point (`:80`) proxying REST endpoints and upgrading Socket.IO WebSockets cleanly. |
+| **Monorepo Overrides** | Unified single-version React 19 (`react` & `react-dom`) pnpm overrides preventing duplicate module instances in Metro. |
 
 ---
 
@@ -86,26 +87,28 @@ The entire codebase lives in a single **pnpm monorepo** orchestrated with **Turb
 ```
 chess-platform/
 ├── apps/
-│   ├── auth-service/          ← Authentication microservice (REST + gRPC)
-│   ├── game-service/          ← Game & matchmaking microservice (REST + WS)
-│   └── mobile-app/            ← React Native app (Expo)
+│   ├── auth-service/          ← Auth microservice (Express, Prisma, gRPC server, Resend)
+│   ├── game-service/          ← Game microservice (Express, Socket.IO, gRPC client, Redis)
+│   └── mobile-app/            ← React Native mobile app (Expo Router v5, Material Design 3)
 │
 ├── packages/
-│   ├── chess-engine/          ← Custom chess engine (move gen, FEN, perft)
-│   ├── shared-grpc/           ← Protobuf definitions + generated stubs
-│   ├── shared-errors/         ← Typed error classes shared across services
-│   ├── shared-logger/         ← Pino-based structured logger
-│   └── shared-config/         ← ESLint + Prettier configuration
+│   ├── chess-engine/          ← Custom bitboard chess engine (FEN, perft, legal moves)
+│   ├── shared-grpc/           ← Protobuf definitions + generated TypeScript stubs
+│   ├── shared-errors/         ← Typed error classes (AppError, AuthError, ValidationError)
+│   ├── shared-logger/         ← Pino structured logger
+│   └── shared-config/         ← ESLint + Prettier shared rules
 │
 ├── docker/
 │   ├── docker-compose.yml     ← PostgreSQL, Redis, Kafka, Zookeeper, NGINX
 │   └── nginx/
-│       └── nginx.conf         ← Reverse proxy + WebSocket upgrade rules
+│       └── nginx.conf         ← Reverse proxy + WebSocket upgrade configuration
 │
-├── integration_test.ts        ← E2E test: Register → Login → WS Matchmaking
+├── scripts/
+│   └── bot_play.js            ← Automated test bot script for instant single-handed dev testing
+│
 ├── turbo.json                 ← Turborepo pipeline configuration
 ├── pnpm-workspace.yaml        ← Workspace package discovery
-└── package.json               ← Root scripts + dev tooling
+└── package.json               ← Root package scripts + dev tooling
 ```
 
 ---
@@ -114,473 +117,167 @@ chess-platform/
 
 ### 🔐 Auth Service (`apps/auth-service`)
 
-Handles all user identity, authentication, and session management.
+Handles user registration, login, token refresh, and user profile management.
 
-**Responsibilities**
-- User registration with email verification (Resend API)
-- Login with JWT access tokens + HTTP-only refresh token cookies
-- Token refresh and secure logout with token rotation
-- gRPC server exposing `GetUserElo` RPC for the Game Service
-- Rate limiting per IP via `express-rate-limit` + Redis store
+**Key Features:**
+- Registration with transactional email support via **Resend SDK**
+- JWT access tokens + HTTP-only refresh cookies
+- gRPC server exposing `getUserInfo` RPC on port **50051**
+- Rate limiting per IP via Redis store
+- PostgreSQL database (`chess_auth_db`)
 
-**Internal Architecture (Layered)**
-```
-src/
-├── presentation/          ← Express routers, request validation (Zod)
-│   └── routes/
-├── application/           ← Use cases (RegisterUser, LoginUser, RefreshToken…)
-│   └── use-cases/
-├── domain/                ← Entities, interfaces (User, IUserRepository)
-│   ├── entities/
-│   └── interfaces/
-└── infrastructure/        ← Prisma, Redis, Resend, JWT, gRPC server
-    ├── database/
-    ├── email/
-    ├── grpc/
-    └── security/
-```
-
-**Key Endpoints**
+**Core Endpoints:**
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/auth/register` | Register a new user |
-| `POST` | `/auth/login` | Login, receive JWT + refresh cookie |
-| `GET`  | `/auth/me` | Get authenticated user profile |
-| `POST` | `/auth/refresh` | Rotate refresh token |
-| `POST` | `/auth/logout` | Invalidate session |
+| `POST` | `/auth/login` | Login and receive JWT access token |
+| `GET`  | `/auth/me` | Fetch profile of authenticated user |
+| `POST` | `/auth/refresh` | Refresh access token using cookie |
+| `POST` | `/auth/logout` | Invalidate user session |
 
 ---
 
 ### 🎮 Game Service (`apps/game-service`)
 
-Handles real-time matchmaking, game lifecycle, and move validation.
+Handles real-time matchmaking, live WebSocket gameplay, and move verification.
 
-**Responsibilities**
-- WebSocket server (Socket.IO) with JWT middleware authentication
-- ELO-based matchmaking queue backed by Redis sorted sets
-- gRPC client — calls Auth Service for player ELO during match creation
-- Chess move validation via the shared `@chess/engine` package
-- Game state persistence in PostgreSQL via Prisma
-- Publishes game events (`move_made`, `game_ended`) to Kafka topics
+**Key Features:**
+- Socket.IO server with JWT authentication middleware
+- Redis-backed matchmaking queue per time control (`1|0`, `3|0`, `5|0`, `10|0`)
+- gRPC client fetching player ELO from Auth Service upon queue pairing
+- Bitboard move validation using `@chess/engine`
+- PostgreSQL database (`chess_game_db`) for game history
 
-**Socket.IO Events**
+**Socket.IO Events:**
 
-| Direction | Event | Payload | Description |
-|-----------|-------|---------|-------------|
-| Client → Server | `matchmaking:join` | `timeControl: string` | Join the matchmaking queue |
-| Client → Server | `matchmaking:leave` | — | Leave the queue |
-| Server → Client | `matchmaking:matched` | `{ gameId, white, black, fen }` | Match found |
-| Client → Server | `game:move` | `{ gameId, move: number }` | Submit a move |
-| Server → Client | `game:move_made` | `{ fen, whiteTime, blackTime }` | Move applied |
-| Client → Server | `game:resign` | `gameId: string` | Resign the game |
-| Server → Client | `game:end` | `{ winner, reason }` | Game over |
-
----
-
-### 📦 Shared Packages
-
-| Package | Description |
-|---------|-------------|
-| `@chess/engine` | Custom chess engine: bitboard move generation, FEN parsing, perft testing |
-| `@chess/grpc` | Protobuf `.proto` files + generated TypeScript stubs for Auth ↔ Game gRPC |
-| `@chess/errors` | Typed error hierarchy: `AppError`, `AuthError`, `ValidationError`, `NotFoundError` |
-| `@chess/logger` | Structured Pino logger with service-name context and pretty-print in dev |
-| `@chess/config` | Shared ESLint (TypeScript-strict) and Prettier configurations |
+| Direction | Event | Payload / Description |
+|-----------|-------|-----------------------|
+| Client → Server | `matchmaking:join` | `timeControl: string` (e.g. `'3|0'`) |
+| Client → Server | `matchmaking:leave` | Cancel matchmaking search |
+| Server → Client | `matchmaking:matched` | `{ gameId, white, black, fen }` |
+| Client → Server | `game:move` | `{ gameId, move: number }` (packed 16-bit move) |
+| Server → Client | `game:move_made` | `{ fen, whiteTime, blackTime }` |
+| Client → Server | `game:resign` | Resign current active game |
+| Server → Client | `game:end` | `{ winner, reason }` |
 
 ---
 
-### 📱 Mobile App (`apps/mobile-app`)
+### 📱 Mobile Client (`apps/mobile-app`)
 
-A premium React Native chess client built with Expo.
+A modern, high-performance React Native app built with **Expo SDK 53** and **Material Design 3 (`react-native-paper`)**.
 
-**Screen Flow**
-```
-App Launch
-    │
-    ├── (no token) ──► Login Screen ──► Register Screen
-    │                        │
-    └── (has token) ◄────────┘
-             │
-             ▼
-        Home / Lobby
-        ├── ELO stats card
-        ├── Time control picker (Bullet / Blitz / Rapid)
-        ├── [Find a Game] → searching spinner
-        └── On match found ──► Live Game Screen
-                                ├── Opponent player card + timer
-                                ├── Interactive Chessboard
-                                │   ├── FEN parsing
-                                │   ├── Tap-to-select + tap-to-move
-                                │   └── Board flips for Black
-                                ├── My player card + timer
-                                ├── Turn indicator
-                                ├── Resign button
-                                └── Game Over banner → Back to Lobby
-```
-
-**State Management (Zustand)**
-```
-authStore
-├── token: string | null        ← Access token (SecureStore)
-├── user: UserProfile | null    ← Decoded JWT profile
-├── login()                     ← POST /auth/login + store token
-├── register()                  ← POST /auth/register
-├── logout()                    ← Clear token + POST /auth/logout
-├── fetchProfile()              ← GET /auth/me
-└── hydrate()                   ← Restore token from SecureStore on app open
-
-gameStore
-├── status: idle|searching|playing|ended
-├── game: ActiveGame | null     ← FEN, players, timers, turn
-├── selectedSquare: number | null
-├── validMoves: number[]
-├── initGame()                  ← Called on matchmaking:matched
-├── applyMove()                 ← Called on game:move_made
-└── endGame()                   ← Called on game:end
-```
+**UI & Feature Highlights:**
+- **Material Design 3 Dark Theme**: Purple/gold accent palette with surface elevation levels.
+- **Interactive Inputs**: Material `AuthInput` with trailing eye icons for password toggles.
+- **Lobby Screen**: User avatar, ELO score card, Win/Loss/Draw chips, and time control selector (`Bullet`, `Blitz`, `Rapid`).
+- **Interactive Chess Board**: 
+  - Dynamic `uiToEngine` coordinate translation (`a1` to `h8` mapping).
+  - Real-time **legal move dot highlights** generated directly by `@chess/engine`.
+  - Automatic board rotation when playing as Black.
+- **Live Game Screen**: Turn status badges, countdown clocks, game-over result cards, and resignation dialogs.
 
 ---
 
 ## Tech Stack
 
-### Backend
-| Layer | Technology |
-|-------|-----------|
-| Runtime | Node.js 20+ |
-| Language | TypeScript 5.5 (strict) |
-| HTTP Framework | Express 4 |
-| Real-time | Socket.IO 4 |
-| ORM | Prisma 5 |
-| Database | PostgreSQL 14 |
-| Cache / Queue | Redis 7 |
-| Event Bus | Apache Kafka 7.5 (Confluent) |
-| Inter-service RPC | gRPC + Protocol Buffers |
-| Auth | JWT (jsonwebtoken) + bcrypt |
-| Validation | Zod |
-| Email | Resend API |
-| Logging | Pino |
-| Testing | Vitest |
+### Backend & Core
+- **Node.js** 20+ & **TypeScript** 5.8 (Strict Mode)
+- **Express 4** (REST APIs)
+- **Socket.IO 4** (WebSocket server)
+- **Prisma 5** (PostgreSQL ORM)
+- **PostgreSQL 14** & **Redis 7**
+- **Apache Kafka 7.5** (Event Bus)
+- **gRPC + Protocol Buffers** (Inter-service RPC)
+- **Vitest** (Unit Testing)
 
-### Frontend (Mobile)
-| Layer | Technology |
-|-------|-----------|
-| Framework | React Native (Expo SDK 53) |
-| Navigation | Expo Router v4 (file-based) |
-| Styling | NativeWind v4 (Tailwind CSS) |
-| State Management | Zustand v5 |
-| HTTP Client | Axios |
-| Real-time | Socket.IO Client |
-| Token Storage | expo-secure-store |
-| Animations | react-native-reanimated |
-| Gradients | expo-linear-gradient |
-
-### Infrastructure & Tooling
-| Tool | Purpose |
-|------|---------|
-| pnpm 9 | Package manager with workspace support |
-| Turborepo 2 | Monorepo build orchestration + caching |
-| NGINX | API gateway, reverse proxy, WS upgrade |
-| Docker Compose | Local infra (Postgres, Redis, Kafka, NGINX) |
-| Husky | Git hooks (pre-commit: build + test) |
-| Commitlint | Conventional commit enforcement |
-| Prettier | Code formatting |
-| ESLint | TypeScript-strict linting |
+### Mobile App
+- **React Native** & **Expo SDK 53**
+- **Material Design 3** (`react-native-paper` 5)
+- **Expo Router v5** (File-based navigation)
+- **Zustand 5** (State Management)
+- **Axios** & **Socket.IO Client**
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### 1. Prerequisites
 
 - **Node.js** ≥ 20.0.0
-- **pnpm** ≥ 9.0.0 — `npm install -g pnpm`
-- **Docker Desktop** — for infrastructure services
-- **Expo Go** app — for running the mobile client on device
+- **pnpm** ≥ 9.0.0 (`npm install -g pnpm`)
+- **Docker Desktop** (for Postgres, Redis, NGINX, Kafka)
+- **Expo Go** app on your iOS / Android phone (or an emulator)
 
-### 1. Clone the Repository
+### 2. Clone & Install
 
 ```bash
 git clone https://github.com/heyitsshubh/Chess_backend.git
 cd Chess_backend
-```
-
-### 2. Install Dependencies
-
-```bash
 pnpm install
 ```
 
-### 3. Configure Environment Variables
-
-**Auth Service** — create `apps/auth-service/.env`:
-```env
-NODE_ENV=development
-PORT=3001
-
-# PostgreSQL
-DATABASE_URL="postgresql://chess_admin:chess_password@localhost:5432/chess_auth_db"
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-min-32-chars
-JWT_EXPIRES_IN=15m
-REFRESH_TOKEN_SECRET=your-refresh-token-secret-min-32-chars
-REFRESH_TOKEN_EXPIRES_IN=7d
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Resend (Email)
-RESEND_API_KEY=re_your_api_key
-EMAIL_FROM=noreply@yourdomain.com
-
-# gRPC
-GRPC_PORT=50051
-```
-
-**Game Service** — create `apps/game-service/.env`:
-```env
-NODE_ENV=development
-PORT=3002
-
-# PostgreSQL
-DATABASE_URL="postgresql://chess_admin:chess_password@localhost:5432/chess_game_db"
-
-# JWT (same secret as Auth Service for token verification)
-JWT_SECRET=your-super-secret-jwt-key-min-32-chars
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Kafka
-KAFKA_BROKERS=localhost:9092
-
-# gRPC (Auth Service address)
-AUTH_GRPC_HOST=localhost
-AUTH_GRPC_PORT=50051
-```
-
-**Mobile App** — create `apps/mobile-app/.env`:
-```env
-# Replace with your local machine's IP address (not localhost!)
-EXPO_PUBLIC_API_URL=http://192.168.1.10
-```
-
-### 4. Start Infrastructure
+### 3. Start Infrastructure
 
 ```bash
-pnpm infra:up
+cd docker
+docker-compose up -d
 ```
+*Starts PostgreSQL (`:5432`), Redis (`:6379`), NGINX (`:80`), Kafka (`:9092`), and Zookeeper (`:2181`).*
 
-This starts: **PostgreSQL** · **Redis** · **Kafka** · **Zookeeper** · **NGINX**
-
-Verify all containers are healthy:
-```bash
-docker ps
-```
-
-### 5. Run Database Migrations
+### 4. Database Setup
 
 ```bash
-# Auth database
-pnpm --filter @chess/auth-service exec prisma migrate dev
-
-# Game database
-pnpm --filter @chess/game-service exec prisma migrate dev
+# Push Prisma schema to PostgreSQL databases
+pnpm --filter @chess/auth-service exec prisma db push
+pnpm --filter @chess/game-service exec prisma db push
 ```
 
-### 6. Start Backend Services
+### 5. Start Backend Services
 
 ```bash
-# Start both services in parallel (with Turborepo)
+# Start all microservices via Turborepo
 pnpm dev
-
-# Or individually:
-pnpm --filter @chess/auth-service dev   # → http://localhost:3001
-pnpm --filter @chess/game-service dev   # → http://localhost:3002
 ```
-
-All traffic is proxied through **NGINX on port 80**:
-- `http://localhost/auth/*` → Auth Service
-- `http://localhost/game/*` → Game Service
-- `ws://localhost/socket.io/*` → Game Service
-
-### 7. Run the Mobile App
-
-```bash
-cd apps/mobile-app
-pnpm start
-```
-
-Scan the QR code with **Expo Go** on iOS or Android.
-
-> ⚠️ Make sure `EXPO_PUBLIC_API_URL` in your `.env` points to your **machine's local IP**, not `localhost` — your phone needs to reach your dev machine over the network.
+- **Auth Service**: `http://localhost:3001`
+- **Game Service**: `http://localhost:3002`
+- **NGINX Gateway**: `http://localhost:80`
 
 ---
 
-## Running Tests
+## Bot Testing Utility
+
+To test real-time matchmaking and gameplay single-handedly on your computer without needing a second physical device:
+
+1. **Start the Mobile App** on your phone / emulator:
+   ```bash
+   cd apps/mobile-app
+   npx expo start -c
+   ```
+2. Press **"Find a Game"** on `3 min Blitz` in the app.
+3. Run the automated opponent bot in your computer terminal:
+   ```bash
+   pnpm bot:play
+   ```
+   *The bot instantly registers, logs in, joins the queue, matches with your phone, and starts the game!*
+
+---
+
+## Running Tests & Typecheck
 
 ```bash
-# All packages (via Turborepo)
+# Run full typecheck across all 8 monorepo packages
+pnpm typecheck
+
+# Run unit tests across all services
 pnpm test
-
-# Individual service
-pnpm --filter @chess/auth-service test
-pnpm --filter @chess/game-service test
-pnpm --filter @chess/engine test
-
-# E2E integration test (requires services running)
-npx ts-node integration_test.ts
 ```
-
-### Test Results
-```
-@chess/engine        2/2 ✓  Perft depth-1, depth-2 (move generation)
-@chess/auth-service  3/3 ✓  Register, Login, /me endpoint
-@chess/game-service  2/2 ✓  Matchmaking queue, match creation
-```
-
----
-
-## API Reference
-
-All requests go through **NGINX** at `http://localhost` (port 80).
-
-### Authentication
-
-#### Register
-```http
-POST /auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "username": "grandmaster42",
-  "password": "SecurePass123!"
-}
-```
-
-#### Login
-```http
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!"
-}
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "userId": "cmsn4iuxm000011od4iynjuyq"
-  }
-}
-```
-
-#### Get Profile
-```http
-GET /auth/me
-Authorization: Bearer <accessToken>
-```
-
-#### Refresh Token
-```http
-POST /auth/refresh
-Cookie: refreshToken=<token>
-```
-
-#### Logout
-```http
-POST /auth/logout
-Authorization: Bearer <accessToken>
-```
-
-### WebSocket (Matchmaking & Game)
-
-Connect to `ws://localhost/socket.io/` with:
-```javascript
-const socket = io('http://localhost', {
-  path: '/socket.io/',
-  auth: { token: '<accessToken>' }
-});
-```
-
----
-
-## Git Workflow
-
-This project follows **Conventional Commits** and feature branch development.
-
-### Branch Strategy
-
-```
-main
-├── feat/mobile-app-setup    ← React Native app (current)
-├── feat/grpc-integration    ← gRPC Auth ↔ Game
-├── feat/game-service        ← Game service + matchmaking
-└── feat/auth-service        ← Auth service
-```
-
-### Commit Convention
-
-```
-feat(scope):   New feature
-fix(scope):    Bug fix
-refactor:      Code refactoring
-test:          Adding tests
-docs:          Documentation
-chore:         Build/tooling changes
-```
-
-Example: `feat(mobile): add live game screen with socket events`
-
-### Pre-commit Hooks (Husky)
-
-Every commit automatically runs:
-1. **Build** — TypeScript compilation for all services
-2. **Test** — Vitest unit test suite across all packages
-3. **Commitlint** — Validates commit message format
-
----
-
-## Project Roadmap
-
-- [x] Monorepo infrastructure (pnpm + Turborepo)
-- [x] Chess engine (move generation, FEN, perft)
-- [x] Auth Service (JWT, refresh tokens, rate limiting)
-- [x] Game Service (Socket.IO matchmaking, move validation)
-- [x] gRPC integration (Auth ↔ Game ELO fetch)
-- [x] NGINX API Gateway
-- [x] React Native mobile app (Expo Router, NativeWind)
-- [ ] ELO rating updates after game end
-- [ ] Move history panel in game screen
-- [ ] Game analysis board (post-game)
-- [ ] Friend system & challenge invites
-- [ ] Game replay viewer
-- [ ] Push notifications (Expo Notifications)
-- [ ] Leaderboard / ranking screen
-- [ ] Admin dashboard
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feat/your-feature`
-3. Commit your changes: `git commit -m "feat(scope): description"`
-4. Push to the branch: `git push origin feat/your-feature`
-5. Open a Pull Request
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
----
+Distributed under the **MIT License**. See `LICENSE` for details.
 
 <div align="center">
 
